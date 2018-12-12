@@ -673,9 +673,9 @@ func (b *BuildConfig) Export(group *lifecycle.BuildpackGroup) error {
 		// TODO do alpha sort
 		for index, bp := range metadata.Buildpacks {
 			var prevBP *lifecycle.BuildpackMetadata
-			for _, pbp := range prevMetadata.Buildpacks {
+			for i, pbp := range prevMetadata.Buildpacks {
 				if pbp.ID == bp.ID {
-					prevBP = &pbp
+					prevBP = &prevMetadata.Buildpacks[i]
 				}
 			}
 
