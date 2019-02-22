@@ -4,6 +4,7 @@ import (
 	"encoding/json"
 	"fmt"
 	"github.com/buildpack/pack/logging"
+	"github.com/pkg/errors"
 
 	"github.com/buildpack/lifecycle"
 	"github.com/buildpack/lifecycle/image"
@@ -74,25 +75,25 @@ func (f *RebaseFactory) Rebase(cfg RebaseConfig) error {
 		return err
 	}
 	if err := cfg.Image.Rebase(metadata.RunImage.TopLayer, cfg.NewBaseImage); err != nil {
-		return err
+		return errors.Wrap(err, "rebase")
 	}
 
 	metadata.RunImage.SHA, err = cfg.NewBaseImage.Digest()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "retrieve base image digest")
 	}
 	metadata.RunImage.TopLayer, err = cfg.NewBaseImage.TopLayer()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "retrieve base image top layer")
 	}
 	newLabel, err := json.Marshal(metadata)
 	if err := cfg.Image.SetLabel("io.buildpacks.lifecycle.metadata", string(newLabel)); err != nil {
-		return err
+		return errors.Wrap(err, "set metadata on image")
 	}
 
 	_, err = cfg.Image.Save()
 	if err != nil {
-		return err
+		return errors.Wrap(err, "saving the image")
 	}
 	return nil
 }
