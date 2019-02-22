@@ -19,4 +19,4 @@ require (
 	github.com/spf13/pflag v1.0.3 // indirect
 )
 
-replace github.com/buildpack/lifecycle v0.0.0-20190130224558-68e8abc962e2 => github.com/buildpack/lifecycle v0.0.0-20190222211558-dedf3d517b8d
+replace github.com/buildpack/lifecycle v0.0.0-20190130224558-68e8abc962e2 => github.com/buildpack/lifecycle v0.0.0-20190222214950-a250c76f7e73

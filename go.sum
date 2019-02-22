@@ -13,6 +13,8 @@ github.com/buildpack/lifecycle v0.0.0-20190222194330-641cae370aef h1:SYkaoD5/tnu
 github.com/buildpack/lifecycle v0.0.0-20190222194330-641cae370aef/go.mod h1:RwXcEaUl8/LuSUKAg/GzlgyQTE0Jvv+CPllQBDP3/cQ=
 github.com/buildpack/lifecycle v0.0.0-20190222211558-dedf3d517b8d h1:pMwIqG1V4jddjl8c1qjQTMZqgzzHy2n79n9/ye63dxo=
 github.com/buildpack/lifecycle v0.0.0-20190222211558-dedf3d517b8d/go.mod h1:RwXcEaUl8/LuSUKAg/GzlgyQTE0Jvv+CPllQBDP3/cQ=
+github.com/buildpack/lifecycle v0.0.0-20190222214950-a250c76f7e73 h1:328yQ7qxidllRlsEp1ujmsck+UzrhEjaPda2mB8KdDw=
+github.com/buildpack/lifecycle v0.0.0-20190222214950-a250c76f7e73/go.mod h1:RwXcEaUl8/LuSUKAg/GzlgyQTE0Jvv+CPllQBDP3/cQ=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
