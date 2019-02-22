@@ -18,3 +18,5 @@ require (
 	github.com/spf13/cobra v0.0.3
 	github.com/spf13/pflag v1.0.3 // indirect
 )
+
+replace github.com/buildpack/lifecycle v0.0.0-20190130224558-68e8abc962e2 => github.com/buildpack/lifecycle v0.0.0-20190222194330-641cae370aef

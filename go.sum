@@ -9,6 +9,8 @@ github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5 h1:TngWCqHvy9oXAN6lEV
 github.com/Nvveen/Gotty v0.0.0-20120604004816-cd527374f1e5/go.mod h1:lmUJ/7eu/Q8D7ML55dXQrVaamCz2vxCfdQBasLZfHKk=
 github.com/buildpack/lifecycle v0.0.0-20190130224558-68e8abc962e2 h1:l7+pJ+kqE7YHCwS7IsgJ3Va3T0TIK4BFwVVbr+46DQE=
 github.com/buildpack/lifecycle v0.0.0-20190130224558-68e8abc962e2/go.mod h1:RwXcEaUl8/LuSUKAg/GzlgyQTE0Jvv+CPllQBDP3/cQ=
+github.com/buildpack/lifecycle v0.0.0-20190222194330-641cae370aef h1:SYkaoD5/tnuTW+ta8Rj30cfDXMnqsP5eh7Al+DZP4rA=
+github.com/buildpack/lifecycle v0.0.0-20190222194330-641cae370aef/go.mod h1:RwXcEaUl8/LuSUKAg/GzlgyQTE0Jvv+CPllQBDP3/cQ=
 github.com/client9/misspell v0.3.4/go.mod h1:qj6jICC3Q7zFZvVWo7KLAzC3yx5G7kyvSDkc90ppPyw=
 github.com/davecgh/go-spew v1.1.1 h1:vj9j/u1bqnvCEfJOwUhtlOARqs3+rkHYY13jYWTU97c=
 github.com/davecgh/go-spew v1.1.1/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
