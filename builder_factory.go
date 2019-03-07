@@ -5,6 +5,8 @@ import (
 	"crypto/sha256"
 	"encoding/json"
 	"fmt"
+	"github.com/buildpack/pack/build"
+	"github.com/buildpack/pack/lifecycletar"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -187,6 +189,18 @@ func (f *BuilderFactory) Create(config BuilderConfig) error {
 		return fmt.Errorf(`failed to create temporary directory: %s`, err)
 	}
 	defer os.RemoveAll(tmpDir)
+
+	lTar, err := build.LifecycleTar(tmpDir)
+	if err != nil {
+		return err
+	}
+	if err := config.Repo.AddLayer(lTar); err != nil {
+		return err
+	}
+
+	if err := config.Repo.SetLabel(lifecycletar.LifecycleLabel, lifecycletar.LifecycleVersion); err != nil {
+		return err
+	}
 
 	orderTar, err := f.orderLayer(tmpDir, config.Groups)
 	if err != nil {

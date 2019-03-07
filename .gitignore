@@ -12,3 +12,6 @@ artifacts/
 
 # Appveyor tools
 /appveyor-tools/
+
+lifecycletar/statik.go
+lifecycle/life.tar

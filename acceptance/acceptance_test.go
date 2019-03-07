@@ -648,7 +648,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 			sourceCodePath := filepath.Join("testdata", "mock_app")
 
 			t.Log("create builder image")
-			cmd := packCmd("create-builder", builderRepoName, "-b", builderTOML)
+			cmd := packCmd("create-builder", builderRepoName, "-b", builderTOML, "--no-pull")
 			output := h.Run(t, cmd)
 			h.AssertContains(t, output, fmt.Sprintf("Successfully created builder image '%s'", builderRepoName))
 

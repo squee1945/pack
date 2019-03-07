@@ -4,6 +4,8 @@ import (
 	"archive/tar"
 	"context"
 	"fmt"
+	"github.com/buildpack/pack/docker"
+	"github.com/buildpack/pack/lifecycletar"
 	"github.com/docker/docker/api/types/filters"
 	"github.com/docker/docker/api/types/volume"
 	"io"
@@ -21,7 +23,9 @@ import (
 	"github.com/buildpack/lifecycle"
 	"github.com/buildpack/lifecycle/image"
 
-	"github.com/buildpack/pack/docker"
+	_ "github.com/buildpack/pack/lifecycletar"
+	sfs "github.com/rakyll/statik/fs"
+
 	"github.com/buildpack/pack/fs"
 	"github.com/buildpack/pack/style"
 
@@ -91,9 +95,21 @@ func NewLifecycle(c LifecycleConfig) (*Lifecycle, error) {
 	}
 
 	tmpDir, err := ioutil.TempDir("", "pack.build.tars")
-	defer os.RemoveAll(tmpDir)
 	if err != nil {
 		return nil, err
+	}
+
+	if label, err := builder.Label(lifecycletar.LifecycleLabel); err != nil {
+		return nil, err
+	} else if label != lifecycletar.LifecycleVersion {
+		ltar, err := LifecycleTar(tmpDir)
+		if err != nil {
+			return nil, err
+		}
+		c.Logger.Info("Setting up lifecycle version %s", lifecycletar.LifecycleVersion)
+		if err := builder.AddLayer(ltar); err != nil {
+			return nil, err
+		}
 	}
 
 	envTar, err := tarEnvFile(tmpDir, c.EnvFile)
@@ -132,6 +148,32 @@ func NewLifecycle(c LifecycleConfig) (*Lifecycle, error) {
 		gid:             gid,
 		appOnce:         &sync.Once{},
 	}, nil
+}
+
+func LifecycleTar(tmpDir string) (string, error) {
+	statikFS, err := sfs.New()
+	if err != nil {
+		return "", err
+	}
+
+	life, err := statikFS.Open("/life.tar")
+	if err != nil {
+		return "", err
+	}
+	defer life.Close()
+
+	fh, err := os.Create(filepath.Join(tmpDir, "life.tar"))
+	defer fh.Close()
+	if err != nil {
+		return "", err
+	}
+
+	_, err = io.Copy(fh, life)
+	if err != nil {
+		return "", err
+	}
+
+	return filepath.Join(tmpDir, "life.tar"), fh.Close()
 }
 
 func (l *Lifecycle) Cleanup(ctx context.Context) error {
