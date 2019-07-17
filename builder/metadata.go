@@ -24,8 +24,13 @@ type GroupMetadata struct {
 	Buildpacks []GroupBuildpack `json:"buildpacks" toml:"buildpacks"`
 }
 
+type OrderMetadata2 struct {
+	// TODO: Group
+	Buildpacks []GroupBuildpack `json:"group" toml:"group"`
+}
+
 type OrderTOML struct {
-	Groups []GroupMetadata `toml:"groups"`
+	Order []OrderMetadata2 `toml:"order"`
 }
 
 type GroupBuildpack struct {
@@ -41,4 +46,24 @@ type StackMetadata struct {
 type RunImageMetadata struct {
 	Image   string   `toml:"image" json:"image"`
 	Mirrors []string `toml:"mirrors" json:"mirrors"`
+}
+
+func OrderToGroups(orders []OrderMetadata2) []GroupMetadata {
+	var groups []GroupMetadata
+	for _, order := range orders {
+		groups = append(groups, GroupMetadata{
+			Buildpacks: order.Buildpacks,
+		})
+	}
+
+	return groups
+}
+func GroupsToOrder(groups []GroupMetadata) []OrderMetadata2 {
+	var orders []OrderMetadata2
+	for _, group := range groups {
+		orders = append(orders, OrderMetadata2{
+			Buildpacks: group.Buildpacks,
+		})
+	}
+	return orders
 }

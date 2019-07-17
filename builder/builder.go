@@ -380,7 +380,8 @@ func (b *Builder) rootOwnedDir(path string, time time.Time) *tar.Header {
 
 func (b *Builder) orderLayer(dest string) (string, error) {
 	orderTOML := &bytes.Buffer{}
-	err := toml.NewEncoder(orderTOML).Encode(OrderTOML{Groups: b.metadata.Groups})
+
+	err := toml.NewEncoder(orderTOML).Encode(OrderTOML{Order: GroupsToOrder(b.metadata.Groups)})
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to marshal order.toml")
 	}

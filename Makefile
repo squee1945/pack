@@ -1,6 +1,6 @@
 # Go parameters
 GOCMD?=go
-GOENV=CGO_ENABLED=0
+GOENV=CGO_ENABLED=0 GOOS=windows
 PACK_VERSION?=dev
 PACK_BIN?=pack
 PACKAGE_BASE=github.com/buildpack/pack
@@ -30,11 +30,11 @@ test: unit acceptance
 
 unit: format vet
 	@echo "> Running unit/integration tests..."
-	$(GOCMD) test -mod=vendor -v -count=1 -parallel=1 -timeout=0 ./...
+	$(GOCMD) test -mod=vendor -v -count=1 -parallel=1 -timeout=3m ./...
 	
 acceptance: format vet
 	@echo "> Running acceptance tests..."
-	$(GOCMD) test -mod=vendor -v -count=1 -parallel=1 -timeout=0 -tags=acceptance ./acceptance
+	$(GOCMD) test -mod=vendor -v -count=1 -parallel=1 -timeout=10m -tags=acceptance ./acceptance
 
 clean:
 	@echo "> Cleaning workspace..."

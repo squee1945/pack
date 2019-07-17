@@ -54,7 +54,7 @@ func testFetcher(t *testing.T, when spec.G, it spec.S) {
 		fetcher = image.NewFetcher(mocks.NewMockLogger(ioutil.Discard), docker)
 	})
 
-	when("#Fetch", func() {
+	when.Pend("#Fetch", func() {
 		when("daemon is false", func() {
 			when("there is a remote image", func() {
 				it.Before(func() {
