@@ -487,7 +487,7 @@ func testBuild(t *testing.T, when spec.G, it spec.S) {
 				bldr, err := builder.GetBuilder(defaultBuilderImage)
 				h.AssertNil(t, err)
 				h.AssertEq(t, bldr.GetOrder(), []builder.GroupMetadata{
-					{Buildpacks: []builder.GroupBuildpack{{ID: "buildpack.id", Version: "buildpack.version"}}},
+					{Buildpacks: []builder.BuildpackRefMetadata{{ID: "buildpack.id", Version: "buildpack.version"}}},
 				})
 			})
 
@@ -503,7 +503,7 @@ func testBuild(t *testing.T, when spec.G, it spec.S) {
 					bldr, err := builder.GetBuilder(defaultBuilderImage)
 					h.AssertNil(t, err)
 					h.AssertEq(t, bldr.GetOrder(), []builder.GroupMetadata{
-						{Buildpacks: []builder.GroupBuildpack{{ID: "buildpack.id", Version: "latest"}}},
+						{Buildpacks: []builder.BuildpackRefMetadata{{ID: "buildpack.id", Version: "latest"}}},
 					})
 				})
 			})
@@ -565,7 +565,7 @@ func testBuild(t *testing.T, when spec.G, it spec.S) {
 						bldr, err := builder.GetBuilder(defaultBuilderImage)
 						h.AssertNil(t, err)
 						h.AssertEq(t, bldr.GetOrder(), []builder.GroupMetadata{
-							{Buildpacks: []builder.GroupBuildpack{
+							{Buildpacks: []builder.BuildpackRefMetadata{
 								{ID: "buildpack.id", Version: "buildpack.version"},
 								{ID: "some-other-buildpack-id", Version: "some-other-buildpack-version"},
 							}},
@@ -599,7 +599,7 @@ func testBuild(t *testing.T, when spec.G, it spec.S) {
 						bldr, err := builder.GetBuilder(defaultBuilderImage)
 						h.AssertNil(t, err)
 						h.AssertEq(t, bldr.GetOrder(), []builder.GroupMetadata{
-							{Buildpacks: []builder.GroupBuildpack{
+							{Buildpacks: []builder.BuildpackRefMetadata{
 								{ID: "buildpack.id", Version: "buildpack.version"},
 								{ID: "some-buildpack-id", Version: "some-buildpack-version"},
 								{ID: "some-other-buildpack-id", Version: "some-other-buildpack-version"},

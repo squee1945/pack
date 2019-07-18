@@ -15,9 +15,21 @@ import (
 type Config struct {
 	Description string            `toml:"description"`
 	Buildpacks  []BuildpackConfig `toml:"buildpacks"`
-	Groups      []GroupMetadata   `toml:"groups"`
+	Order       OrderConfig       `toml:"order"`
 	Stack       StackConfig       `toml:"stack"`
 	Lifecycle   LifecycleConfig   `toml:"lifecycle"`
+}
+
+type OrderConfig []GroupConfig
+
+type GroupConfig struct {
+	Group []GroupBuildpackConfig `toml:"group"`
+}
+
+type GroupBuildpackConfig struct {
+	ID       string `toml:"id"`
+	Version  string `toml:"version"`
+	Optional bool   `toml:"optional,omitempty"`
 }
 
 type BuildpackConfig struct {

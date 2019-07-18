@@ -76,7 +76,8 @@ func (c *Client) CreateBuilder(ctx context.Context, opts CreateBuilderOptions) e
 		}
 	}
 
-	if err := builderImage.SetOrder(opts.BuilderConfig.Groups); err != nil {
+	groupMetadata := builder.OrderConfigToGroupMetadata(opts.BuilderConfig.Order)
+	if err := builderImage.SetOrder(groupMetadata); err != nil {
 		return errors.Wrap(err, "builder config has invalid groups")
 	}
 

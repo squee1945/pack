@@ -106,8 +106,8 @@ func testCreateBuilder(t *testing.T, when spec.G, it spec.S) {
 							Latest:  true,
 						},
 					},
-					Groups: []builder.GroupMetadata{{
-						Buildpacks: []builder.GroupBuildpack{
+					Order: []builder.GroupConfig{{
+						Group: []builder.GroupBuildpackConfig{
 							{ID: "bp.one", Version: "1.2.3", Optional: false},
 						}},
 					},
@@ -229,7 +229,7 @@ func testCreateBuilder(t *testing.T, when spec.G, it spec.S) {
 				Latest:  true,
 			}})
 			h.AssertEq(t, builderImage.GetOrder(), []builder.GroupMetadata{{
-				Buildpacks: []builder.GroupBuildpack{{
+				Buildpacks: []builder.BuildpackRefMetadata{{
 					ID:       "bp.one",
 					Version:  "1.2.3",
 					Optional: false,

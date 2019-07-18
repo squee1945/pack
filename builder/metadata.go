@@ -21,49 +21,62 @@ type BuildpackMetadata struct {
 }
 
 type GroupMetadata struct {
-	Buildpacks []GroupBuildpack `json:"buildpacks" toml:"buildpacks"`
+	Buildpacks []BuildpackRefMetadata `json:"buildpacks"`
 }
 
-type OrderMetadata2 struct {
-	// TODO: Group
-	Buildpacks []GroupBuildpack `json:"group" toml:"group"`
-}
-
-type OrderTOML struct {
-	Order []OrderMetadata2 `toml:"order"`
-}
-
-type GroupBuildpack struct {
-	ID       string `json:"id" toml:"id"`
-	Version  string `json:"version" toml:"version"`
-	Optional bool   `json:"optional,omitempty" toml:"optional,omitempty"`
+type BuildpackRefMetadata struct {
+	ID       string `json:"id"`
+	Version  string `json:"version"`
+	Optional bool   `json:"optional,omitempty"`
 }
 
 type StackMetadata struct {
-	RunImage RunImageMetadata `toml:"run-image" json:"runImage"`
+	RunImage RunImageMetadata `json:"runImage"`
 }
 
 type RunImageMetadata struct {
-	Image   string   `toml:"image" json:"image"`
-	Mirrors []string `toml:"mirrors" json:"mirrors"`
+	Image   string   `json:"image"`
+	Mirrors []string `json:"mirrors"`
 }
 
-func OrderToGroups(orders []OrderMetadata2) []GroupMetadata {
+// TODO: Move these?
+func OrderConfigToGroupMetadata(order OrderConfig) []GroupMetadata {
 	var groups []GroupMetadata
-	for _, order := range orders {
+	for _, gp := range order {
+		var buildpacks []BuildpackRefMetadata
+		for _, bp := range gp.Group {
+			buildpacks = append(buildpacks, BuildpackRefMetadata{
+				ID:       bp.ID,
+				Version:  bp.Version,
+				Optional: bp.Optional,
+			})
+		}
+
 		groups = append(groups, GroupMetadata{
-			Buildpacks: order.Buildpacks,
+			Buildpacks: buildpacks,
 		})
 	}
 
 	return groups
 }
-func GroupsToOrder(groups []GroupMetadata) []OrderMetadata2 {
-	var orders []OrderMetadata2
+
+func GroupMetadataToOrderConfig(groups []GroupMetadata) OrderConfig {
+	var order []GroupConfig
+
 	for _, group := range groups {
-		orders = append(orders, OrderMetadata2{
-			Buildpacks: group.Buildpacks,
+		var buildpacks []GroupBuildpackConfig
+		for _, bp := range group.Buildpacks {
+			buildpacks = append(buildpacks, GroupBuildpackConfig{
+				ID:       bp.ID,
+				Version:  bp.Version,
+				Optional: bp.Optional,
+			})
+		}
+
+		order = append(order, GroupConfig{
+			Group: buildpacks,
 		})
 	}
-	return orders
+
+	return order
 }

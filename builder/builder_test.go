@@ -491,7 +491,7 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 						Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
 					}))
 					h.AssertNil(t, subject.SetOrder([]builder.GroupMetadata{
-						{Buildpacks: []builder.GroupBuildpack{
+						{Buildpacks: []builder.BuildpackRefMetadata{
 							{
 								ID:      "some-buildpack-id",
 								Version: "some-buildpack-version",
@@ -544,7 +544,7 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 				when("the group buildpack has latest version", func() {
 					it("fails if no buildpack is tagged as latest", func() {
 						err := subject.SetOrder([]builder.GroupMetadata{
-							{Buildpacks: []builder.GroupBuildpack{
+							{Buildpacks: []builder.BuildpackRefMetadata{
 								{
 									ID:      "some-buildpack-id",
 									Version: "latest",
@@ -559,7 +559,7 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 			when("no version of the group buildpack exists in the image", func() {
 				it("errors", func() {
 					err := subject.SetOrder([]builder.GroupMetadata{
-						{Buildpacks: []builder.GroupBuildpack{
+						{Buildpacks: []builder.BuildpackRefMetadata{
 							{
 								ID:      "some-buildpack-id",
 								Version: "some-buildpack-version",
@@ -579,7 +579,7 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 						Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
 					}))
 					err := subject.SetOrder([]builder.GroupMetadata{
-						{Buildpacks: []builder.GroupBuildpack{
+						{Buildpacks: []builder.BuildpackRefMetadata{
 							{
 								ID:      "some-buildpack-id",
 								Version: "wrong-version",

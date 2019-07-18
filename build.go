@@ -209,12 +209,12 @@ func (c *Client) processProxyConfig(config *ProxyConfig) ProxyConfig {
 }
 
 func (c *Client) processBuildpacks(buildpacks []string) ([]buildpack.Buildpack, builder.GroupMetadata, error) {
-	group := builder.GroupMetadata{Buildpacks: []builder.GroupBuildpack{}}
+	group := builder.GroupMetadata{Buildpacks: []builder.BuildpackRefMetadata{}}
 	var bps []buildpack.Buildpack
 	for _, bp := range buildpacks {
 		if isBuildpackId(bp) {
 			id, version := c.parseBuildpack(bp)
-			group.Buildpacks = append(group.Buildpacks, builder.GroupBuildpack{ID: id, Version: version})
+			group.Buildpacks = append(group.Buildpacks, builder.BuildpackRefMetadata{ID: id, Version: version})
 		} else {
 			if runtime.GOOS == "windows" && filepath.Ext(bp) != ".tgz" {
 				return nil, builder.GroupMetadata{}, fmt.Errorf("buildpack %s: Windows only supports .tgz-based buildpacks", style.Symbol(bp))
@@ -225,7 +225,7 @@ func (c *Client) processBuildpacks(buildpacks []string) ([]buildpack.Buildpack, 
 				return nil, builder.GroupMetadata{}, errors.Wrapf(err, "failed to fetch buildpack from URI '%s'", bp)
 			}
 			bps = append(bps, fetchedBP)
-			group.Buildpacks = append(group.Buildpacks, builder.GroupBuildpack{ID: fetchedBP.ID, Version: fetchedBP.Version})
+			group.Buildpacks = append(group.Buildpacks, builder.BuildpackRefMetadata{ID: fetchedBP.ID, Version: fetchedBP.Version})
 		}
 	}
 	return bps, group, nil

@@ -49,6 +49,19 @@ type Builder struct {
 	replaceOrder  bool
 }
 
+type orderTOML struct {
+	Order OrderConfig `toml:"order"`
+}
+
+type stackTOML struct {
+	RunImage stackTOMLRunImage `toml:"run-image"`
+}
+
+type stackTOMLRunImage struct {
+	Image   string   `toml:"image"`
+	Mirrors []string `toml:"mirrors"`
+}
+
 func GetBuilder(img imgutil.Image) (*Builder, error) {
 	uid, gid, err := userAndGroupIDs(img)
 	if err != nil {
@@ -163,8 +176,8 @@ func (b *Builder) SetEnv(env map[string]string) {
 	b.env = env
 }
 
-func (b *Builder) SetOrder(order []GroupMetadata) error {
-	for _, group := range order {
+func (b *Builder) SetOrder(groups []GroupMetadata) error {
+	for _, group := range groups {
 		for _, groupBP := range group.Buildpacks {
 			mdBPs := b.bpsWithID(groupBP.ID)
 			if len(mdBPs) == 0 {
@@ -179,7 +192,7 @@ func (b *Builder) SetOrder(order []GroupMetadata) error {
 			}
 		}
 	}
-	b.metadata.Groups = order
+	b.metadata.Groups = groups
 	b.replaceOrder = true
 	return nil
 }
@@ -379,15 +392,15 @@ func (b *Builder) rootOwnedDir(path string, time time.Time) *tar.Header {
 }
 
 func (b *Builder) orderLayer(dest string) (string, error) {
-	orderTOML := &bytes.Buffer{}
+	buf := &bytes.Buffer{}
 
-	err := toml.NewEncoder(orderTOML).Encode(OrderTOML{Order: GroupsToOrder(b.metadata.Groups)})
+	err := toml.NewEncoder(buf).Encode(orderTOML{Order: GroupMetadataToOrderConfig(b.metadata.Groups)})
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to marshal order.toml")
 	}
 
 	layerTar := filepath.Join(dest, "order.tar")
-	err = archive.CreateSingleFileTar(layerTar, unixJoin(buildpacksDir, "order.toml"), orderTOML.String())
+	err = archive.CreateSingleFileTar(layerTar, unixJoin(buildpacksDir, "order.toml"), buf.String())
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to create order.toml layer tar")
 	}
@@ -396,14 +409,19 @@ func (b *Builder) orderLayer(dest string) (string, error) {
 }
 
 func (b *Builder) stackLayer(dest string) (string, error) {
-	stackTOML := &bytes.Buffer{}
-	err := toml.NewEncoder(stackTOML).Encode(b.metadata.Stack)
+	buf := &bytes.Buffer{}
+	err := toml.NewEncoder(buf).Encode(stackTOML{
+		stackTOMLRunImage{
+			Image:   b.metadata.Stack.RunImage.Image,
+			Mirrors: b.metadata.Stack.RunImage.Mirrors,
+		},
+	})
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to marshal stack.toml")
 	}
 
 	layerTar := filepath.Join(dest, "stack.tar")
-	err = archive.CreateSingleFileTar(layerTar, unixJoin(buildpacksDir, "stack.toml"), stackTOML.String())
+	err = archive.CreateSingleFileTar(layerTar, unixJoin(buildpacksDir, "stack.toml"), buf.String())
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to create stack.toml layer tar")
 	}

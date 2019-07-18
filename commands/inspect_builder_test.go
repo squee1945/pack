@@ -146,7 +146,7 @@ ERROR: some local error
 					RunImageMirrors: []string{"first/default", "second/default"},
 					Buildpacks:      buildpacks,
 					Groups: []builder.GroupMetadata{
-						{Buildpacks: []builder.GroupBuildpack{
+						{Buildpacks: []builder.BuildpackRefMetadata{
 							{ID: "test.bp.one", Version: "1.0.0", Optional: true},
 							{ID: "test.bp.two", Version: "2.0.0"},
 						}}},
@@ -159,8 +159,8 @@ ERROR: some local error
 					RunImageMirrors: []string{"first/local-default", "second/local-default"},
 					Buildpacks:      buildpacks,
 					Groups: []builder.GroupMetadata{
-						{Buildpacks: []builder.GroupBuildpack{{ID: "test.bp.one", Version: "1.0.0"}}},
-						{Buildpacks: []builder.GroupBuildpack{{ID: "test.bp.two", Version: "2.0.0", Optional: true}}},
+						{Buildpacks: []builder.BuildpackRefMetadata{{ID: "test.bp.one", Version: "1.0.0"}}},
+						{Buildpacks: []builder.BuildpackRefMetadata{{ID: "test.bp.two", Version: "2.0.0", Optional: true}}},
 					},
 					LifecycleVersion: "4.5.6",
 				}

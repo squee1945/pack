@@ -14,14 +14,15 @@
   uri = "noop-buildpack.tgz"
   latest = true
 
-[[groups]]
-  [[groups.buildpacks]]
-    id = "simple/layers"
-    version = "simple-layers-version"
-  [[groups.buildpacks]]
-    id = "read/env"
-    version = "read-env-version"
-    optional = true
+[[order]]
+[[order.group]]
+  id = "simple/layers"
+  version = "simple-layers-version"
+
+[[order.group]]
+  id = "read/env"
+  version = "read-env-version"
+  optional = true
 
 [stack]
   id = "pack.test.stack"
