@@ -1,7 +1,7 @@
-[buildpack]
+[[buildpacks]]
   id = "other/stack/bp"
   version = "other-stack-version"
   name = "Other Stack Buildpack"
 
-[[stacks]]
+[[buildpacks.stacks]]
   id = "other.stack"

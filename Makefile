@@ -30,8 +30,8 @@ test: unit acceptance
 
 unit: format vet
 	@echo "> Running unit/integration tests..."
-	$(GOCMD) test -mod=vendor -v -count=1 -parallel=1 -timeout=3m ./...
-	
+	$(GOCMD) test -mod=vendor -v -count=1 -parallel=1 -timeout=5m ./...
+
 acceptance: format vet
 	@echo "> Running acceptance tests..."
 	$(GOCMD) test -mod=vendor -v -count=1 -parallel=1 -timeout=10m -tags=acceptance ./acceptance

@@ -510,13 +510,13 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 				it("adds the order.toml to the image", func() {
 					layerTar, err := baseImage.FindLayerWithPath("/buildpacks/order.toml")
 					h.AssertNil(t, err)
-					h.AssertOnTarEntry(t, layerTar, "/buildpacks/order.toml", h.ContentEquals(`[[groups]]
+					h.AssertOnTarEntry(t, layerTar, "/buildpacks/order.toml", h.ContentEquals(`[[order]]
 
-  [[groups.buildpacks]]
+  [[order.group]]
     id = "some-buildpack-id"
     version = "some-buildpack-version"
 
-  [[groups.buildpacks]]
+  [[order.group]]
     id = "optional-buildpack-id"
     version = "latest"
     optional = true
