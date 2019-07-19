@@ -56,7 +56,6 @@ type BuildpackConfig struct {
 	ID      string `toml:"id"`
 	Version string `toml:"version"`
 	URI     string `toml:"uri"`
-	Latest  bool   `toml:"latest"`
 }
 
 type StackConfig struct {

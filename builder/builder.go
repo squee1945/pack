@@ -161,7 +161,7 @@ func (b *Builder) AddBuildpack(bp buildpack.Buildpack) error {
 		return fmt.Errorf("buildpack %s version %s does not support stack %s", style.Symbol(bp.ID), style.Symbol(bp.Version), style.Symbol(b.StackID))
 	}
 	b.buildpacks = append(b.buildpacks, bp)
-	b.metadata.Buildpacks = append(b.metadata.Buildpacks, BuildpackMetadata{ID: bp.ID, Version: bp.Version, Latest: bp.Latest})
+	b.metadata.Buildpacks = append(b.metadata.Buildpacks, BuildpackMetadata{ID: bp.ID, Version: bp.Version})
 	return nil
 }
 
@@ -183,11 +183,7 @@ func (b *Builder) SetOrder(groups []GroupMetadata) error {
 				return fmt.Errorf("no versions of buildpack %s were found on the builder", style.Symbol(groupBP.ID))
 			}
 			if !hasBPWithVersion(mdBPs, groupBP.Version) {
-				if groupBP.Version == "latest" {
-					return fmt.Errorf("there is no version of buildpack %s marked as latest", style.Symbol(groupBP.ID))
-				} else {
-					return fmt.Errorf("buildpack %s with version %s was not found on the builder", style.Symbol(groupBP.ID), style.Symbol(groupBP.Version))
-				}
+				return fmt.Errorf("buildpack %s with version %s was not found on the builder", style.Symbol(groupBP.ID), style.Symbol(groupBP.Version))
 			}
 		}
 	}
@@ -208,7 +204,7 @@ func (b *Builder) bpsWithID(id string) []BuildpackMetadata {
 
 func hasBPWithVersion(bps []BuildpackMetadata, version string) bool {
 	for _, bp := range bps {
-		if (bp.Version == version) || (bp.Latest && version == "latest") {
+		if bp.Version == version {
 			return true
 		}
 	}
@@ -481,18 +477,6 @@ func (b *Builder) buildpackLayer(dest string, bp buildpack.Buildpack) (string, e
 
 	if err != nil {
 		return "", errors.Wrapf(err, "creating layer tar for buildpack '%s:%s'", bp.ID, bp.Version)
-	}
-
-	if bp.Latest {
-		err := tw.WriteHeader(&tar.Header{
-			Name:     path.Join(buildpacksDir, bp.EscapedID(), "latest"),
-			Linkname: baseTarDir,
-			Typeflag: tar.TypeSymlink,
-			Mode:     0644,
-		})
-		if err != nil {
-			return "", errors.Wrapf(err, "creating latest symlink for buildpack '%s:%s'", bp.ID, bp.Version)
-		}
 	}
 
 	return layerTar, nil

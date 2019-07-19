@@ -17,7 +17,6 @@ type Metadata struct {
 type BuildpackMetadata struct {
 	ID      string `json:"id"`
 	Version string `json:"version"`
-	Latest  bool   `json:"latest"`
 }
 
 type OrderMetadata []GroupMetadata

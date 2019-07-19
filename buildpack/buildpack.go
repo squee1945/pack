@@ -9,7 +9,6 @@ type BuildpackTOML struct {
 
 type Buildpack struct {
 	ID      string
-	Latest  bool
 	Path    string
 	Version string
 	Stacks  []Stack

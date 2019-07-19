@@ -62,7 +62,6 @@ func (c *Client) CreateBuilder(ctx context.Context, opts CreateBuilderOptions) e
 		if err != nil {
 			return err
 		}
-		fetchedBuildpack.Latest = b.Latest
 		if b.ID != "" && fetchedBuildpack.ID != b.ID {
 			return fmt.Errorf("buildpack from URI '%s' has ID '%s' which does not match ID '%s' from builder config", b.URI, fetchedBuildpack.ID, b.ID)
 		}
