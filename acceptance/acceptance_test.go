@@ -278,7 +278,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 							"-p", filepath.Join("testdata", "mock_app"),
 							"--buildpack", notBuilderTgz,
 							"--buildpack", "simple/layers@simple-layers-version",
-							"--buildpack", "noop.buildpack@noop.buildpack.version", // TODO: support version-less value
+							"--buildpack", "noop.buildpack@noop.buildpack.version",
 						)
 						output := h.Run(t, cmd)
 						h.AssertContains(t, output, "NOOP Buildpack")

@@ -107,7 +107,7 @@ func testCreateBuilder(t *testing.T, when spec.G, it spec.S) {
 						},
 					},
 					Order: []builder.GroupConfig{{
-						Group: []builder.GroupBuildpackConfig{
+						Group: []builder.BuildpackRefConfig{
 							{ID: "bp.one", Version: "1.2.3", Optional: false},
 						}},
 					},

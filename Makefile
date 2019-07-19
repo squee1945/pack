@@ -1,6 +1,6 @@
 # Go parameters
 GOCMD?=go
-GOENV=CGO_ENABLED=0 GOOS=windows
+GOENV=CGO_ENABLED=0
 PACK_VERSION?=dev
 PACK_BIN?=pack
 PACKAGE_BASE=github.com/buildpack/pack

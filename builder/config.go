@@ -43,10 +43,10 @@ func (o OrderConfig) ToMetadata() OrderMetadata {
 }
 
 type GroupConfig struct {
-	Group []GroupBuildpackConfig `toml:"group"`
+	Group []BuildpackRefConfig `toml:"group"`
 }
 
-type GroupBuildpackConfig struct {
+type BuildpackRefConfig struct {
 	ID       string `toml:"id"`
 	Version  string `toml:"version"`
 	Optional bool   `toml:"optional,omitempty"`

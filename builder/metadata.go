@@ -26,9 +26,9 @@ func (o OrderMetadata) ToConfig() OrderConfig {
 	var order OrderConfig
 
 	for _, group := range o {
-		var buildpacks []GroupBuildpackConfig
+		var buildpacks []BuildpackRefConfig
 		for _, bp := range group.Buildpacks {
-			buildpacks = append(buildpacks, GroupBuildpackConfig{
+			buildpacks = append(buildpacks, BuildpackRefConfig{
 				ID:       bp.ID,
 				Version:  bp.Version,
 				Optional: bp.Optional,
