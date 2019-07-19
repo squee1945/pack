@@ -278,7 +278,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 							"-p", filepath.Join("testdata", "mock_app"),
 							"--buildpack", notBuilderTgz,
 							"--buildpack", "simple/layers@simple-layers-version",
-							"--buildpack", "noop.buildpack",
+							"--buildpack", "noop.buildpack@noop.buildpack.version", // TODO: support version-less value
 						)
 						output := h.Run(t, cmd)
 						h.AssertContains(t, output, "NOOP Buildpack")
@@ -290,7 +290,6 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 							"Cached Dep Contents",
 						)
 					})
-
 				})
 
 				when("the argument is directory", func() {
