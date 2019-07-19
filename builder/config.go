@@ -22,6 +22,26 @@ type Config struct {
 
 type OrderConfig []GroupConfig
 
+func (o OrderConfig) ToMetadata() OrderMetadata {
+	var order OrderMetadata
+	for _, gp := range o {
+		var buildpacks []BuildpackRefMetadata
+		for _, bp := range gp.Group {
+			buildpacks = append(buildpacks, BuildpackRefMetadata{
+				ID:       bp.ID,
+				Version:  bp.Version,
+				Optional: bp.Optional,
+			})
+		}
+
+		order = append(order, GroupMetadata{
+			Buildpacks: buildpacks,
+		})
+	}
+
+	return order
+}
+
 type GroupConfig struct {
 	Group []GroupBuildpackConfig `toml:"group"`
 }
