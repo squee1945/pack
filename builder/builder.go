@@ -285,7 +285,7 @@ func (b *Builder) Save() error {
 		return errors.Wrap(err, "adding stack.tar layer")
 	}
 
-	label, err := json.Marshal(b.metadata)
+	label, err := json.Marshal(shimLatestFlags(b.metadata))
 	if err != nil {
 		return errors.Wrap(err, "failed marshal builder image metadata")
 	}
@@ -300,6 +300,30 @@ func (b *Builder) Save() error {
 
 	_, err = b.image.Save()
 	return err
+}
+
+// shimLatestFlags enables the `Latest` flag for each buildpack that is the only version of its kind (i.e. ID)
+// present. It allows for builders to be somewhat backwards-compatible with older versions of pack (< 0.4.0)
+// when running `pack build <app> --buildpack <some buildpack>` (without specifying a buildpack version
+// in which case '@latest' is assumed) or `pack build <app> --buildpack <some buildpack>@latest`.
+//
+// It should be removed once we're no longer supporting those versions of pack.
+//
+// It does NOT enable the `Latest` flag when there is more than one version of a particular buildpack present.
+func shimLatestFlags(md Metadata) Metadata {
+	byID := map[string][]*BuildpackMetadata{}
+	for b := range md.Buildpacks {
+		id := md.Buildpacks[b].ID
+		byID[id] = append(byID[id], &md.Buildpacks[b])
+	}
+
+	for _, bps := range byID {
+		if len(bps) == 1 {
+			bps[0].Latest = true
+		}
+	}
+
+	return md
 }
 
 func userAndGroupIDs(img imgutil.Image) (int, int, error) {
