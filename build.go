@@ -10,7 +10,6 @@ import (
 	"strings"
 
 	"github.com/buildpack/imgutil"
-	"github.com/docker/docker/api/types"
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pkg/errors"
 
@@ -88,7 +87,8 @@ func (c *Client) Build(ctx context.Context, opts BuildOptions) error {
 	if err != nil {
 		return err
 	}
-	defer c.docker.ImageRemove(context.Background(), ephemeralBuilder.Name(), types.ImageRemoveOptions{Force: true})
+	fmt.Println("***** EPHEMERAL BUILDER: ", ephemeralBuilder.Name())
+	// defer c.docker.ImageRemove(context.Background(), ephemeralBuilder.Name(), types.ImageRemoveOptions{Force: true})
 
 	return c.lifecycle.Execute(ctx, build.LifecycleOptions{
 		AppPath:    appPath,

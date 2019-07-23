@@ -49,7 +49,7 @@ func (f *Fetcher) FetchBuildpack(uri string) (Buildpack, error) {
 
 	return Buildpack{ // TODO: return multiple buildpacks
 		Path:    downloadedPath,
-		ID:      data.Buildpacks[0].ID, // TODO: check length, filter based on
+		ID:      data.Buildpacks[0].ID, // TODO: check length, filter based on ID
 		Version: data.Buildpacks[0].Version,
 		Stacks:  data.Buildpacks[0].Stacks,
 	}, err

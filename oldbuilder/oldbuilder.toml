@@ -1,0 +1,23 @@
+[[buildpacks]]
+  id = "single.buildpack"
+  version = "single.buildpack.v1"
+  uri = "single-buildpack"
+  latest = true
+
+[[buildpacks]]
+  id = "dup.buildpack"
+  version = "dup.buildpack.v1"
+  uri = "dup-buildpack-1"
+
+[[buildpacks]]
+  id = "dup.buildpack"
+  version = "dup.buildpack.v2"
+  uri = "dup-buildpack-2"
+
+[stack]
+  id = "io.buildpacks.stacks.bionic"
+  build-image = "cnbs/build"
+  run-image = "cnbs/run"
+
+[lifecycle]
+  version = "0.3.0"

@@ -204,7 +204,7 @@ func (b *Builder) bpsWithID(id string) []BuildpackMetadata {
 
 func hasBPWithVersion(bps []BuildpackMetadata, version string) bool {
 	for _, bp := range bps {
-		if bp.Version == version {
+		if (bp.Version == version) || (bp.Latest && version == "latest") {
 			return true
 		}
 	}
