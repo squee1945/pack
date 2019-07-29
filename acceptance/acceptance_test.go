@@ -265,7 +265,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 					var notBuilderTgz string
 
 					it.Before(func() {
-						notBuilderTgz = h.CreateTgz(t, filepath.Join("testdata", "mock_buildpacks", "not-in-builder-buildpack"), "./", 0766)
+						notBuilderTgz = h.CreateTGZ(t, filepath.Join("testdata", "mock_buildpacks", "not-in-builder-buildpack"), "./", 0766)
 					})
 
 					it.After(func() {
@@ -313,7 +313,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 					var otherStackBuilderTgz string
 
 					it.Before(func() {
-						otherStackBuilderTgz = h.CreateTgz(t, filepath.Join("testdata", "mock_buildpacks", "other-stack-buildpack"), "./", 0766)
+						otherStackBuilderTgz = h.CreateTGZ(t, filepath.Join("testdata", "mock_buildpacks", "other-stack-buildpack"), "./", 0766)
 					})
 
 					it.After(func() {
@@ -798,7 +798,7 @@ func createBuilder(t *testing.T, runImageMirror string) string {
 	}
 
 	for _, v := range buildpacks {
-		tgz := h.CreateTgz(t, filepath.Join("testdata", "mock_buildpacks", v), "./", 0766)
+		tgz := h.CreateTGZ(t, filepath.Join("testdata", "mock_buildpacks", v), "./", 0766)
 		err := os.Rename(tgz, filepath.Join(tmpDir, v+".tgz"))
 		h.AssertNil(t, err)
 	}

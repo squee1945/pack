@@ -1,18 +1,26 @@
 package buildpack
 
-import "strings"
+import (
+	"strings"
+)
 
 type BuildpackTOML struct {
-	Buildpack Buildpack
-	Stacks    []Stack
+	Info   BuildpackInfo `toml:"buildpack"`
+	Stacks []Stack
+}
+
+type BuildpackInfo struct {
+	ID      string
+	Latest  bool
+	Version string
 }
 
 type Buildpack struct {
 	ID      string
 	Latest  bool
-	Path    string
 	Version string
 	Stacks  []Stack
+	Blob
 }
 
 type Stack struct {

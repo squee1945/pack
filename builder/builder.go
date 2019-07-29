@@ -448,20 +448,7 @@ func (b *Builder) buildpackLayer(dest string, bp buildpack.Buildpack) (string, e
 		return "", err
 	}
 
-	if filepath.Ext(bp.Path) == ".tgz" {
-		err = b.embedBuildpackTar(tw, bp.Path, baseTarDir)
-	} else {
-		err = archive.WriteDirToTar(
-			tw,
-			bp.Path,
-			baseTarDir,
-			b.UID,
-			b.GID,
-			-1,
-		)
-	}
-
-	if err != nil {
+	if err := b.embedBuildpackTar(tw, bp, baseTarDir); err != nil {
 		return "", errors.Wrapf(err, "creating layer tar for buildpack '%s:%s'", bp.ID, bp.Version)
 	}
 
@@ -480,30 +467,18 @@ func (b *Builder) buildpackLayer(dest string, bp buildpack.Buildpack) (string, e
 	return layerTar, nil
 }
 
-func (b *Builder) embedBuildpackTar(tw *tar.Writer, srcTar, baseTarDir string) error {
+func (b *Builder) embedBuildpackTar(tw *tar.Writer, bp buildpack.Buildpack, baseTarDir string) error {
 	var (
-		tarFile    *os.File
-		gzipReader *gzip.Reader
-		fhFinal    io.Reader
-		err        error
+		err error
 	)
 
-	tarFile, err = os.Open(srcTar)
-	fhFinal = tarFile
+	rc, err := bp.Read()
 	if err != nil {
-		return errors.Wrapf(err, "failed to open buildpack tar '%s'", srcTar)
+		errors.Wrap(err, "read buildpack blob")
 	}
-	defer tarFile.Close()
+	defer rc.Close()
 
-	gzipReader, err = gzip.NewReader(tarFile)
-	fhFinal = gzipReader
-	if err != nil {
-		return errors.Wrap(err, "failed to create gzip reader")
-	}
-
-	defer gzipReader.Close()
-
-	tr := tar.NewReader(fhFinal)
+	tr := tar.NewReader(rc)
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {

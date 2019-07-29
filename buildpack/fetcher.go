@@ -44,7 +44,7 @@ func (f *Fetcher) FetchBuildpack(uri string) (Buildpack, error) {
 	}
 
 	return Buildpack{
-		Path:    downloadedPath,
+		Blob:    Blob{Path: downloadedPath},
 		ID:      data.Buildpack.ID,
 		Version: data.Buildpack.Version,
 		Stacks:  data.Stacks,
