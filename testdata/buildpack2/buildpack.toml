@@ -1,4 +1,4 @@
-[[buildpacks]]
+[buildpack]
 id = "some-other-buildpack-id"
 version = "some-other-buildpack-version"
 

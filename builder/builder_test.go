@@ -296,16 +296,16 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 						ID:      "tgz-buildpack-id",
 						Version: "tgz-buildpack-version",
 						Path:    buildpackTgz,
-						Latest:  false,
-						Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
+						// Latest:  false,
+						Stacks: []buildpack.Stack{{ID: "some.stack.id"}},
 					}))
 
 					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
 						ID:      "latest-buildpack-id",
 						Version: "latest-buildpack-version",
 						Path:    buildpackTgz,
-						Latest:  true,
-						Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
+						// Latest:  true,
+						Stacks: []buildpack.Stack{{ID: "some.stack.id"}},
 					}))
 
 					if runtime.GOOS != "windows" {
@@ -486,9 +486,9 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
 						ID:      "optional-buildpack-id",
 						Version: "optional-buildpack-version",
-						Latest:  true,
-						Path:    filepath.Join("testdata", "buildpack"),
-						Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
+						// Latest:  true,
+						Path:   filepath.Join("testdata", "buildpack"),
+						Stacks: []buildpack.Stack{{ID: "some.stack.id"}},
 					}))
 					h.AssertNil(t, subject.SetOrder([]builder.GroupMetadata{
 						{Buildpacks: []builder.BuildpackRefMetadata{

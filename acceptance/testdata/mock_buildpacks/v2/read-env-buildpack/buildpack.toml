@@ -1,4 +1,4 @@
-[[buildpacks]]
+[buildpack]
   id = "read/env"
   version = "read-env-version"
   name = "Buildpack Reads Env"

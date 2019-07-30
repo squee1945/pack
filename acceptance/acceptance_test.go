@@ -149,7 +149,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 				h.Run(t, packCmd("set-default-builder", builder))
 			})
 
-			it("creates a runnable, rebuildable image on daemon from app dir", func() {
+			it.Focus("creates a runnable, rebuildable image on daemon from app dir", func() {
 				appPath := filepath.Join("testdata", "mock_app")
 				cmd := packCmd(
 					"build", repoName,
@@ -265,7 +265,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 					var notBuilderTgz string
 
 					it.Before(func() {
-						notBuilderTgz = h.CreateTgz(t, filepath.Join("testdata", "mock_buildpacks", "not-in-builder-buildpack"), "./", 0766)
+						notBuilderTgz = h.CreateTgz(t, filepath.Join(testBuildpacksDir(), "not-in-builder-buildpack"), "./", 0766)
 					})
 
 					it.After(func() {
@@ -299,7 +299,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 						cmd := packCmd(
 							"build", repoName,
 							"-p", filepath.Join("testdata", "mock_app"),
-							"--buildpack", filepath.Join("testdata", "mock_buildpacks", "not-in-builder-buildpack"),
+							"--buildpack", filepath.Join(testBuildpacksDir(), "not-in-builder-buildpack"),
 						)
 						output := h.Run(t, cmd)
 						h.AssertContains(t, output, fmt.Sprintf("Successfully built image '%s'", repoName))
@@ -312,7 +312,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 					var otherStackBuilderTgz string
 
 					it.Before(func() {
-						otherStackBuilderTgz = h.CreateTgz(t, filepath.Join("testdata", "mock_buildpacks", "other-stack-buildpack"), "./", 0766)
+						otherStackBuilderTgz = h.CreateTgz(t, filepath.Join(testBuildpacksDir(), "other-stack-buildpack"), "./", 0766)
 					})
 
 					it.After(func() {
@@ -779,6 +779,14 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 	})
 }
 
+func testBuildpacksDir() string {
+	d := "v1"
+	if lifecycleVersion.GreaterThan(lifecycleV030) {
+		d = "v2"
+	}
+	return filepath.Join("testdata", "mock_buildpacks", d)
+}
+
 func createBuilder(t *testing.T, runImageMirror string) string {
 	t.Log("create builder image")
 
@@ -786,7 +794,8 @@ func createBuilder(t *testing.T, runImageMirror string) string {
 	h.AssertNil(t, err)
 	defer os.RemoveAll(tmpDir)
 
-	h.RecursiveCopy(t, filepath.Join("testdata", "mock_buildpacks"), tmpDir)
+	t.Log("MOCK BPS DIR: ", testBuildpacksDir())
+	h.RecursiveCopy(t, testBuildpacksDir(), tmpDir)
 
 	buildpacks := []string{
 		"noop-buildpack",
@@ -797,7 +806,7 @@ func createBuilder(t *testing.T, runImageMirror string) string {
 	}
 
 	for _, v := range buildpacks {
-		tgz := h.CreateTgz(t, filepath.Join("testdata", "mock_buildpacks", v), "./", 0766)
+		tgz := h.CreateTgz(t, filepath.Join(testBuildpacksDir(), v), "./", 0766)
 		err := os.Rename(tgz, filepath.Join(tmpDir, v+".tgz"))
 		h.AssertNil(t, err)
 	}

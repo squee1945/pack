@@ -413,7 +413,22 @@ func (b *Builder) rootOwnedDir(path string, time time.Time) *tar.Header {
 func (b *Builder) orderLayer(dest string) (string, error) {
 	buf := &bytes.Buffer{}
 
-	err := toml.NewEncoder(buf).Encode(orderTOML{Order: b.metadata.Groups.ToConfig()})
+	var orderToml interface{}
+	if b.GetLifecycleVersion().GreaterThan(semver.MustParse("0.3.0")) {
+		orderToml = orderTOML{Order: b.metadata.Groups.ToConfig()}
+	} else {
+		orderToml = struct{
+			Groups []struct{
+				Buildpacks []BuildpackRefConfig
+			} `toml:"groups"`
+		}{
+			Groups: []struct{
+				Buildpacks []BuildpackRefConfig
+			},
+		}
+	}
+
+	err := toml.NewEncoder(buf).Encode(orderToml)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to marshal order.toml")
 	}

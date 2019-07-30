@@ -17,11 +17,11 @@ type Downloader interface {
 }
 
 type buildpackTOML struct {
-	Buildpacks []struct {
-		ID      string  `toml:"id"`
-		Version string  `toml:"version"`
-		Stacks  []Stack `toml:"stacks"`
-	} `toml:"buildpacks"`
+	Buildpack struct {
+		ID      string `toml:"id"`
+		Version string `toml:"version"`
+	} `toml:"buildpack"`
+	Stacks []Stack `toml:"stacks"`
 }
 
 type Fetcher struct {
@@ -43,15 +43,11 @@ func (f *Fetcher) FetchBuildpack(uri string) (Buildpack, error) {
 		return Buildpack{}, err
 	}
 
-	if len(data.Buildpacks) <= 0 {
-		return Buildpack{}, errors.New("no buildpacks defined in buildpack TOML")
-	}
-
-	return Buildpack{ // TODO: return multiple buildpacks
+	return Buildpack{ // TODO: return multiple buildpacks?
 		Path:    downloadedPath,
-		ID:      data.Buildpacks[0].ID, // TODO: check length, filter based on ID
-		Version: data.Buildpacks[0].Version,
-		Stacks:  data.Buildpacks[0].Stacks,
+		ID:      data.Buildpack.ID,
+		Version: data.Buildpack.Version,
+		Stacks:  data.Stacks,  // TODO: Figure out how to handle stacks when order was present (multiple buildpacks)
 	}, err
 }
 
