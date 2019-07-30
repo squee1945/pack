@@ -10,7 +10,7 @@ import (
 	semver "github.com/Masterminds/semver"
 	gomock "github.com/golang/mock/gomock"
 
-	lifecycle "github.com/buildpack/pack/lifecycle"
+	lifecycle "github.com/blob/pack/lifecycle"
 )
 
 // MockLifecycleFetcher is a mock of LifecycleFetcher interface
@@ -36,15 +36,15 @@ func (m *MockLifecycleFetcher) EXPECT() *MockLifecycleFetcherMockRecorder {
 	return m.recorder
 }
 
-// Fetch mocks base method
+// FetchLifecycle mocks base method
 func (m *MockLifecycleFetcher) Fetch(arg0 *semver.Version, arg1 string) (lifecycle.Metadata, error) {
-	ret := m.ctrl.Call(m, "Fetch", arg0, arg1)
+	ret := m.ctrl.Call(m, "FetchLifecycle", arg0, arg1)
 	ret0, _ := ret[0].(lifecycle.Metadata)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
 }
 
-// Fetch indicates an expected call of Fetch
+// FetchLifecycle indicates an expected call of FetchLifecycle
 func (mr *MockLifecycleFetcherMockRecorder) Fetch(arg0, arg1 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Fetch", reflect.TypeOf((*MockLifecycleFetcher)(nil).Fetch), arg0, arg1)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchLifecycle", reflect.TypeOf((*MockLifecycleFetcher)(nil).Fetch), arg0, arg1)
 }

@@ -16,7 +16,7 @@ import (
 
 	"github.com/buildpack/pack/build"
 	"github.com/buildpack/pack/builder"
-	"github.com/buildpack/pack/buildpack"
+	"github.com/buildpack/pack/blob"
 	"github.com/buildpack/pack/internal/archive"
 	"github.com/buildpack/pack/style"
 )
@@ -208,9 +208,9 @@ func (c *Client) processProxyConfig(config *ProxyConfig) ProxyConfig {
 	}
 }
 
-func (c *Client) processBuildpacks(buildpacks []string) ([]buildpack.Buildpack, builder.GroupMetadata, error) {
+func (c *Client) processBuildpacks(buildpacks []string) ([]blob.Buildpack, builder.GroupMetadata, error) {
 	group := builder.GroupMetadata{Buildpacks: []builder.GroupBuildpack{}}
-	var bps []buildpack.Buildpack
+	var bps []blob.Buildpack
 	for _, bp := range buildpacks {
 		if isBuildpackId(bp) {
 			id, version := c.parseBuildpack(bp)
@@ -255,7 +255,7 @@ func (c *Client) parseBuildpack(bp string) (string, string) {
 	return parts[0], "latest"
 }
 
-func (c *Client) createEphemeralBuilder(rawBuilderImage imgutil.Image, env map[string]string, group builder.GroupMetadata, buildpacks []buildpack.Buildpack) (*builder.Builder, error) {
+func (c *Client) createEphemeralBuilder(rawBuilderImage imgutil.Image, env map[string]string, group builder.GroupMetadata, buildpacks []blob.Buildpack) (*builder.Builder, error) {
 	origBuilderName := rawBuilderImage.Name()
 	bldr, err := builder.New(rawBuilderImage, fmt.Sprintf("pack.local/builder/%x:latest", randString(10)))
 	if err != nil {

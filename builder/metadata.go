@@ -11,7 +11,7 @@ type Metadata struct {
 	Buildpacks  []BuildpackMetadata `json:"buildpacks"`
 	Groups      []GroupMetadata     `json:"groups"`
 	Stack       StackMetadata       `json:"stack"`
-	Lifecycle   lifecycle.Metadata  `json:"lifecycle"`
+	Lifecycle   lifecycle.Lifecycle `json:"lifecycle"`
 }
 
 type BuildpackMetadata struct {

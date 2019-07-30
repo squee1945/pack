@@ -9,7 +9,7 @@ import (
 
 	gomock "github.com/golang/mock/gomock"
 
-	buildpack "github.com/buildpack/pack/buildpack"
+	buildpack "github.com/blob/pack/blob"
 )
 
 // MockBuildpackFetcher is a mock of BuildpackFetcher interface

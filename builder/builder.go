@@ -21,7 +21,7 @@ import (
 	"github.com/buildpack/imgutil"
 	"github.com/pkg/errors"
 
-	"github.com/buildpack/pack/buildpack"
+	"github.com/buildpack/pack/blob"
 	"github.com/buildpack/pack/internal/archive"
 	"github.com/buildpack/pack/lifecycle"
 	"github.com/buildpack/pack/style"
@@ -41,7 +41,7 @@ const (
 type Builder struct {
 	image         imgutil.Image
 	lifecyclePath string
-	buildpacks    []buildpack.Buildpack
+	buildpacks    []blob.Buildpack
 	metadata      Metadata
 	env           map[string]string
 	UID, GID      int
@@ -144,7 +144,7 @@ func New(img imgutil.Image, name string) (*Builder, error) {
 	}, nil
 }
 
-func (b *Builder) AddBuildpack(bp buildpack.Buildpack) error {
+func (b *Builder) AddBuildpack(bp blob.Buildpack) error {
 	if !bp.SupportsStack(b.StackID) {
 		return fmt.Errorf("buildpack %s version %s does not support stack %s", style.Symbol(bp.Info.ID), style.Symbol(bp.Info.Version), style.Symbol(b.StackID))
 	}
@@ -153,7 +153,7 @@ func (b *Builder) AddBuildpack(bp buildpack.Buildpack) error {
 	return nil
 }
 
-func (b *Builder) SetLifecycle(md lifecycle.Metadata) error {
+func (b *Builder) SetLifecycle(md lifecycle.Lifecycle) error {
 	b.metadata.Lifecycle.Version = md.Version
 	b.lifecyclePath = md.Path
 	return nil
@@ -415,7 +415,7 @@ func (b *Builder) stackLayer(dest string) (string, error) {
 // layer tar = {ID}.{V}.tar
 //
 // inside the layer = /buildpacks/{ID}/{V}/*
-func (b *Builder) buildpackLayer(dest string, bp buildpack.Buildpack) (string, error) {
+func (b *Builder) buildpackLayer(dest string, bp blob.Buildpack) (string, error) {
 	layerTar := filepath.Join(dest, fmt.Sprintf("%s.%s.tar", bp.EscapedID(), bp.Info.Version))
 
 	fh, err := os.Create(layerTar)
@@ -467,7 +467,7 @@ func (b *Builder) buildpackLayer(dest string, bp buildpack.Buildpack) (string, e
 	return layerTar, nil
 }
 
-func (b *Builder) embedBuildpackTar(tw *tar.Writer, bp buildpack.Buildpack, baseTarDir string) error {
+func (b *Builder) embedBuildpackTar(tw *tar.Writer, bp blob.Buildpack, baseTarDir string) error {
 	var (
 		err error
 	)

@@ -15,7 +15,7 @@ import (
 	"github.com/sclevine/spec/report"
 
 	"github.com/buildpack/pack/builder"
-	"github.com/buildpack/pack/buildpack"
+	"github.com/buildpack/pack/blob"
 	"github.com/buildpack/pack/internal/archive"
 	"github.com/buildpack/pack/lifecycle"
 	h "github.com/buildpack/pack/testhelpers"
@@ -210,7 +210,7 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 			it.Before(func() {
 				lifecycleTgz = h.CreateTGZ(t, filepath.Join("testdata", "lifecycle"), "./lifecycle", 0755)
 
-				h.AssertNil(t, subject.SetLifecycle(lifecycle.Metadata{
+				h.AssertNil(t, subject.SetLifecycle(lifecycle.Lifecycle{
 					Version: semver.MustParse("1.2.3"),
 					Path:    lifecycleTgz,
 				}))
@@ -292,34 +292,34 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 				it.Before(func() {
 					buildpackTgz = h.CreateTGZ(t, filepath.Join("testdata", "buildpack"), "./", 0644)
 
-					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
-						Info: buildpack.BuildpackInfo{
+					h.AssertNil(t, subject.AddBuildpack(blob.Buildpack{
+						Info: blob.BuildpackInfo{
 							ID:      "tgz-buildpack-id",
 							Version: "tgz-buildpack-version",
 							Latest:  false,
 						},
-						Stacks: []buildpack.Stack{{ID: "some.stack.id"}},
-						Blob:   buildpack.Blob{Path: buildpackTgz},
+						Stacks: []blob.Stack{{ID: "some.stack.id"}},
+						Blob:   blob.Blob{Path: buildpackTgz},
 					}))
 
-					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
-						Info: buildpack.BuildpackInfo{
+					h.AssertNil(t, subject.AddBuildpack(blob.Buildpack{
+						Info: blob.BuildpackInfo{
 							ID:      "latest-buildpack-id",
 							Version: "latest-buildpack-version",
 							Latest:  true,
 						},
-						Stacks: []buildpack.Stack{{ID: "some.stack.id"}},
-						Blob:   buildpack.Blob{Path: buildpackTgz},
+						Stacks: []blob.Stack{{ID: "some.stack.id"}},
+						Blob:   blob.Blob{Path: buildpackTgz},
 					}))
 
 					if runtime.GOOS != "windows" {
-						h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
-							Info: buildpack.BuildpackInfo{
+						h.AssertNil(t, subject.AddBuildpack(blob.Buildpack{
+							Info: blob.BuildpackInfo{
 								ID:      "dir-buildpack-id",
 								Version: "dir-buildpack-version",
 							},
-							Stacks: []buildpack.Stack{{ID: "some.stack.id"}},
-							Blob:   buildpack.Blob{Path: buildpackTgz},
+							Stacks: []blob.Stack{{ID: "some.stack.id"}},
+							Blob:   blob.Blob{Path: buildpackTgz},
 						}))
 					}
 
@@ -420,13 +420,13 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 
 			when("buildpack stack id does not match", func() {
 				it("returns an error", func() {
-					err := subject.AddBuildpack(buildpack.Buildpack{
-						Info: buildpack.BuildpackInfo{
+					err := subject.AddBuildpack(blob.Buildpack{
+						Info: blob.BuildpackInfo{
 							ID:      "some-buildpack-id",
 							Version: "some-buildpack-version",
 						},
-						Stacks: []buildpack.Stack{{ID: "other.stack.id"}},
-						Blob:   buildpack.Blob{Path: filepath.Join("testdata", "buildpack")},
+						Stacks: []blob.Stack{{ID: "other.stack.id"}},
+						Blob:   blob.Blob{Path: filepath.Join("testdata", "buildpack")},
 					})
 					h.AssertError(t, err, "buildpack 'some-buildpack-id' version 'some-buildpack-version' does not support stack 'some.stack.id'")
 				})
@@ -443,13 +443,13 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 					subject, err = builder.New(baseImage, "some/builder")
 					h.AssertNil(t, err)
 
-					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
-						Info: buildpack.BuildpackInfo{
+					h.AssertNil(t, subject.AddBuildpack(blob.Buildpack{
+						Info: blob.BuildpackInfo{
 							ID:      "some-buildpack-id",
 							Version: "some-buildpack-version",
 						},
-						Stacks: []buildpack.Stack{{ID: "some.stack.id"}},
-						Blob:   buildpack.Blob{Path: filepath.Join("testdata", "buildpack")},
+						Stacks: []blob.Stack{{ID: "some.stack.id"}},
+						Blob:   blob.Blob{Path: filepath.Join("testdata", "buildpack")},
 					}))
 					h.AssertNil(t, subject.Save())
 					h.AssertEq(t, baseImage.IsSaved(), true)
@@ -481,30 +481,30 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 		when("#SetOrder", func() {
 			when("the buildpacks exist in the image", func() {
 				it.Before(func() {
-					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
-						Info: buildpack.BuildpackInfo{
+					h.AssertNil(t, subject.AddBuildpack(blob.Buildpack{
+						Info: blob.BuildpackInfo{
 							ID:      "some-buildpack-id",
 							Version: "some-buildpack-version",
 						},
-						Stacks: []buildpack.Stack{{ID: "some.stack.id"}},
-						Blob:   buildpack.Blob{Path: filepath.Join("testdata", "buildpack")},
+						Stacks: []blob.Stack{{ID: "some.stack.id"}},
+						Blob:   blob.Blob{Path: filepath.Join("testdata", "buildpack")},
 					}))
-					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
-						Info: buildpack.BuildpackInfo{
+					h.AssertNil(t, subject.AddBuildpack(blob.Buildpack{
+						Info: blob.BuildpackInfo{
 							ID:      "optional-buildpack-id",
 							Version: "older-optional-buildpack-version",
 						},
-						Stacks: []buildpack.Stack{{ID: "some.stack.id"}},
-						Blob:   buildpack.Blob{Path: filepath.Join("testdata", "buildpack")},
+						Stacks: []blob.Stack{{ID: "some.stack.id"}},
+						Blob:   blob.Blob{Path: filepath.Join("testdata", "buildpack")},
 					}))
-					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
-						Info: buildpack.BuildpackInfo{
+					h.AssertNil(t, subject.AddBuildpack(blob.Buildpack{
+						Info: blob.BuildpackInfo{
 							ID:      "optional-buildpack-id",
 							Version: "optional-buildpack-version",
 							Latest:  true,
 						},
-						Stacks: []buildpack.Stack{{ID: "some.stack.id"}},
-						Blob:   buildpack.Blob{Path: filepath.Join("testdata", "buildpack")},
+						Stacks: []blob.Stack{{ID: "some.stack.id"}},
+						Blob:   blob.Blob{Path: filepath.Join("testdata", "buildpack")},
 					}))
 					h.AssertNil(t, subject.SetOrder([]builder.GroupMetadata{
 						{Buildpacks: []builder.GroupBuildpack{
@@ -588,13 +588,13 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 
 			when("wrong versions of the group buildpack exists in the image", func() {
 				it("errors", func() {
-					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
-						Info: buildpack.BuildpackInfo{
+					h.AssertNil(t, subject.AddBuildpack(blob.Buildpack{
+						Info: blob.BuildpackInfo{
 							ID:      "some-buildpack-id",
 							Version: "some-buildpack-version",
 						},
-						Stacks: []buildpack.Stack{{ID: "some.stack.id"}},
-						Blob:   buildpack.Blob{Path: filepath.Join("testdata", "buildpack")},
+						Stacks: []blob.Stack{{ID: "some.stack.id"}},
+						Blob:   blob.Blob{Path: filepath.Join("testdata", "buildpack")},
 					}))
 					err := subject.SetOrder([]builder.GroupMetadata{
 						{Buildpacks: []builder.GroupBuildpack{
