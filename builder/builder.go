@@ -146,10 +146,10 @@ func New(img imgutil.Image, name string) (*Builder, error) {
 
 func (b *Builder) AddBuildpack(bp buildpack.Buildpack) error {
 	if !bp.SupportsStack(b.StackID) {
-		return fmt.Errorf("buildpack %s version %s does not support stack %s", style.Symbol(bp.ID), style.Symbol(bp.Version), style.Symbol(b.StackID))
+		return fmt.Errorf("buildpack %s version %s does not support stack %s", style.Symbol(bp.Info.ID), style.Symbol(bp.Info.Version), style.Symbol(b.StackID))
 	}
 	b.buildpacks = append(b.buildpacks, bp)
-	b.metadata.Buildpacks = append(b.metadata.Buildpacks, BuildpackMetadata{ID: bp.ID, Version: bp.Version, Latest: bp.Latest})
+	b.metadata.Buildpacks = append(b.metadata.Buildpacks, BuildpackMetadata{ID: bp.Info.ID, Version: bp.Info.Version, Latest: bp.Info.Latest})
 	return nil
 }
 
@@ -255,7 +255,7 @@ func (b *Builder) Save() error {
 			return err
 		}
 		if err := b.image.AddLayer(layerTar); err != nil {
-			return errors.Wrapf(err, "adding layer tar for buildpack %s:%s", style.Symbol(bp.ID), style.Symbol(bp.Version))
+			return errors.Wrapf(err, "adding layer tar for buildpack %s:%s", style.Symbol(bp.Info.ID), style.Symbol(bp.Info.Version))
 		}
 	}
 
@@ -416,7 +416,7 @@ func (b *Builder) stackLayer(dest string) (string, error) {
 //
 // inside the layer = /buildpacks/{ID}/{V}/*
 func (b *Builder) buildpackLayer(dest string, bp buildpack.Buildpack) (string, error) {
-	layerTar := filepath.Join(dest, fmt.Sprintf("%s.%s.tar", bp.EscapedID(), bp.Version))
+	layerTar := filepath.Join(dest, fmt.Sprintf("%s.%s.tar", bp.EscapedID(), bp.Info.Version))
 
 	fh, err := os.Create(layerTar)
 	if err != nil {
@@ -438,7 +438,7 @@ func (b *Builder) buildpackLayer(dest string, bp buildpack.Buildpack) (string, e
 		return "", err
 	}
 
-	baseTarDir := unixJoin(buildpacksDir, bp.EscapedID(), bp.Version)
+	baseTarDir := unixJoin(buildpacksDir, bp.EscapedID(), bp.Info.Version)
 	if err := tw.WriteHeader(&tar.Header{
 		Typeflag: tar.TypeDir,
 		Name:     baseTarDir,
@@ -448,24 +448,11 @@ func (b *Builder) buildpackLayer(dest string, bp buildpack.Buildpack) (string, e
 		return "", err
 	}
 
-	if filepath.Ext(bp.Path) == ".tgz" {
-		err = b.embedBuildpackTar(tw, bp.Path, baseTarDir)
-	} else {
-		err = archive.WriteDirToTar(
-			tw,
-			bp.Path,
-			baseTarDir,
-			b.UID,
-			b.GID,
-			-1,
-		)
+	if err := b.embedBuildpackTar(tw, bp, baseTarDir); err != nil {
+		return "", errors.Wrapf(err, "creating layer tar for buildpack '%s:%s'", bp.Info.ID, bp.Info.Version)
 	}
 
-	if err != nil {
-		return "", errors.Wrapf(err, "creating layer tar for buildpack '%s:%s'", bp.ID, bp.Version)
-	}
-
-	if bp.Latest {
+	if bp.Info.Latest {
 		err := tw.WriteHeader(&tar.Header{
 			Name:     fmt.Sprintf("%s/%s/%s", buildpacksDir, bp.EscapedID(), "latest"),
 			Linkname: baseTarDir,
@@ -473,37 +460,25 @@ func (b *Builder) buildpackLayer(dest string, bp buildpack.Buildpack) (string, e
 			Mode:     0644,
 		})
 		if err != nil {
-			return "", errors.Wrapf(err, "creating latest symlink for buildpack '%s:%s'", bp.ID, bp.Version)
+			return "", errors.Wrapf(err, "creating latest symlink for buildpack '%s:%s'", bp.Info.ID, bp.Info.Version)
 		}
 	}
 
 	return layerTar, nil
 }
 
-func (b *Builder) embedBuildpackTar(tw *tar.Writer, srcTar, baseTarDir string) error {
+func (b *Builder) embedBuildpackTar(tw *tar.Writer, bp buildpack.Buildpack, baseTarDir string) error {
 	var (
-		tarFile    *os.File
-		gzipReader *gzip.Reader
-		fhFinal    io.Reader
-		err        error
+		err error
 	)
 
-	tarFile, err = os.Open(srcTar)
-	fhFinal = tarFile
+	rc, err := bp.Read()
 	if err != nil {
-		return errors.Wrapf(err, "failed to open buildpack tar '%s'", srcTar)
+		errors.Wrap(err, "read buildpack blob")
 	}
-	defer tarFile.Close()
+	defer rc.Close()
 
-	gzipReader, err = gzip.NewReader(tarFile)
-	fhFinal = gzipReader
-	if err != nil {
-		return errors.Wrap(err, "failed to create gzip reader")
-	}
-
-	defer gzipReader.Close()
-
-	tr := tar.NewReader(fhFinal)
+	tr := tar.NewReader(rc)
 	for {
 		header, err := tr.Next()
 		if err == io.EOF {

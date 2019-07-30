@@ -523,7 +523,7 @@ func testBuild(t *testing.T, when spec.G, it spec.S) {
 				var buildpackTgz string
 
 				it.Before(func() {
-					buildpackTgz = h.CreateTgz(t, filepath.Join("testdata", "buildpack2"), "./", 0755)
+					buildpackTgz = h.CreateTGZ(t, filepath.Join("testdata", "buildpack2"), "./", 0755)
 				})
 
 				it.After(func() {

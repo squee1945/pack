@@ -225,7 +225,7 @@ func (c *Client) processBuildpacks(buildpacks []string) ([]buildpack.Buildpack, 
 				return nil, builder.GroupMetadata{}, errors.Wrapf(err, "failed to fetch buildpack from URI '%s'", bp)
 			}
 			bps = append(bps, fetchedBP)
-			group.Buildpacks = append(group.Buildpacks, builder.GroupBuildpack{ID: fetchedBP.ID, Version: fetchedBP.Version})
+			group.Buildpacks = append(group.Buildpacks, builder.GroupBuildpack{ID: fetchedBP.Info.ID, Version: fetchedBP.Info.Version})
 		}
 	}
 	return bps, group, nil
@@ -263,9 +263,9 @@ func (c *Client) createEphemeralBuilder(rawBuilderImage imgutil.Image, env map[s
 	}
 	bldr.SetEnv(env)
 	for _, bp := range buildpacks {
-		c.logger.Debugf("adding buildpack %s version %s to builder", style.Symbol(bp.ID), style.Symbol(bp.Version))
+		c.logger.Debugf("adding buildpack %s version %s to builder", style.Symbol(bp.Info.ID), style.Symbol(bp.Info.Version))
 		if err := bldr.AddBuildpack(bp); err != nil {
-			return nil, errors.Wrapf(err, "failed to add buildpack %s version %s to builder", style.Symbol(bp.ID), style.Symbol(bp.Version))
+			return nil, errors.Wrapf(err, "failed to add buildpack %s version %s to builder", style.Symbol(bp.Info.ID), style.Symbol(bp.Info.Version))
 		}
 	}
 	if len(group.Buildpacks) > 0 {
