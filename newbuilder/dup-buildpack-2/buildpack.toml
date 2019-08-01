@@ -3,5 +3,5 @@
   version = "dup.buildpack.v2"
   name = "Dup Buildpack V2"
 
-[[buildpacks.stacks]]
+[[stacks]]
   id = "io.buildpacks.stacks.bionic"

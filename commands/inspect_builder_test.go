@@ -195,9 +195,9 @@ Run Images:
   second/default
 
 Buildpacks:
-  ID                 VERSION        LATEST
-  test.bp.one        1.0.0          true
-  test.bp.two        2.0.0          false
+  ID                 VERSION
+  test.bp.one        1.0.0
+  test.bp.two        2.0.0
 
 Detection Order:
   Group #1:
@@ -223,9 +223,9 @@ Run Images:
   second/local-default
 
 Buildpacks:
-  ID                 VERSION        LATEST
-  test.bp.one        1.0.0          true
-  test.bp.two        2.0.0          false
+  ID                 VERSION
+  test.bp.one        1.0.0
+  test.bp.two        2.0.0
 
 Detection Order:
   Group #1:
@@ -264,9 +264,9 @@ Run Images:
   second/default
 
 Buildpacks:
-  ID                 VERSION        LATEST
-  test.bp.one        1.0.0          true
-  test.bp.two        2.0.0          false
+  ID                 VERSION
+  test.bp.one        1.0.0
+  test.bp.two        2.0.0
 
 Detection Order:
   Group #1:
@@ -292,9 +292,9 @@ Run Images:
   second/local-default
 
 Buildpacks:
-  ID                 VERSION        LATEST
-  test.bp.one        1.0.0          true
-  test.bp.two        2.0.0          false
+  ID                 VERSION
+  test.bp.one        1.0.0
+  test.bp.two        2.0.0
 
 Detection Order:
   Group #1:

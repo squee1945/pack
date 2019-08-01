@@ -4,6 +4,10 @@ import (
 	"encoding/json"
 	"testing"
 
+	"github.com/Masterminds/semver"
+
+	"github.com/buildpack/pack/lifecycle"
+
 	"github.com/buildpack/imgutil/fakes"
 
 	"github.com/buildpack/pack/builder"
@@ -23,6 +27,9 @@ func NewFakeBuilderImage(t *testing.T, name string, buildpacks []builder.Buildpa
 				Image:   config.Stack.RunImage,
 				Mirrors: config.Stack.RunImageMirrors,
 			},
+		},
+		Lifecycle: lifecycle.Metadata{
+			Version: semver.MustParse(lifecycle.DefaultLifecycleVersion),
 		},
 	}
 	label, err := json.Marshal(&metadata)

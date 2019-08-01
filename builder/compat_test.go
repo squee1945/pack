@@ -22,8 +22,8 @@ func testCompat(t *testing.T, when spec.G, it spec.S) {
 				Order: []GroupConfig{
 					{
 						Group: []BuildpackRefConfig{
-							{ID: "buildpack.id.1", Version: "1.2.3", Optional: false,},
-							{ID: "buildpack.id.2", Version: "4.5.6", Optional: true,},
+							{ID: "buildpack.id.1", Version: "1.2.3", Optional: false},
+							{ID: "buildpack.id.2", Version: "4.5.6", Optional: true},
 						},
 					},
 				},
@@ -35,8 +35,8 @@ func testCompat(t *testing.T, when spec.G, it spec.S) {
 				Groups: []v1Group{
 					{
 						Buildpacks: []v1BuildpackRef{
-							{ID: "buildpack.id.1", Version: "1.2.3", Optional: false,},
-							{ID: "buildpack.id.2", Version: "4.5.6", Optional: true,},
+							{ID: "buildpack.id.1", Version: "1.2.3", Optional: false},
+							{ID: "buildpack.id.2", Version: "4.5.6", Optional: true},
 						},
 					},
 				},

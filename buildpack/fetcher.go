@@ -47,7 +47,7 @@ func (f *Fetcher) FetchBuildpack(uri string) (Buildpack, error) {
 		Path:    downloadedPath,
 		ID:      data.Buildpack.ID,
 		Version: data.Buildpack.Version,
-		Stacks:  data.Stacks,  // TODO: Figure out how to handle stacks when order was present (multiple buildpacks)
+		Stacks:  data.Stacks, // TODO: Figure out how to handle stacks when order was present (multiple buildpacks)
 	}, err
 }
 

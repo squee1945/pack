@@ -1,9 +1,11 @@
 package builder
 
 import (
-	"github.com/Masterminds/semver"
-	"github.com/buildpack/pack/lifecycle"
 	"testing"
+
+	"github.com/Masterminds/semver"
+
+	"github.com/buildpack/pack/lifecycle"
 
 	"github.com/fatih/color"
 	"github.com/sclevine/spec"
@@ -23,12 +25,12 @@ func testMetadata(t *testing.T, when spec.G, it spec.S) {
 			it("should resolve unset version", func() {
 				md := Metadata{
 					Buildpacks: []BuildpackMetadata{
-						{ID: "bp.id.1", Version: "1.2.3",},
+						{ID: "bp.id.1", Version: "1.2.3"},
 					},
 					Groups: []GroupMetadata{
 						{
 							Buildpacks: []BuildpackRefMetadata{
-								{ID: "bp.id.1", Version: "",},
+								{ID: "bp.id.1", Version: ""},
 							},
 						},
 					},
@@ -47,13 +49,13 @@ func testMetadata(t *testing.T, when spec.G, it spec.S) {
 				it("nothing should be updated", func() {
 					md := Metadata{
 						Buildpacks: []BuildpackMetadata{
-							{ID: "bp.id.1", Version: "1.2.3",},
-							{ID: "bp.id.1", Version: "4.5.6",},
+							{ID: "bp.id.1", Version: "1.2.3"},
+							{ID: "bp.id.1", Version: "4.5.6"},
 						},
 						Groups: []GroupMetadata{
 							{
 								Buildpacks: []BuildpackRefMetadata{
-									{ID: "bp.id.1", Version: "1.2.3",},
+									{ID: "bp.id.1", Version: "1.2.3"},
 								},
 							},
 						},
@@ -67,13 +69,13 @@ func testMetadata(t *testing.T, when spec.G, it spec.S) {
 
 					expected := Metadata{
 						Buildpacks: []BuildpackMetadata{
-							{ID: "bp.id.1", Version: "1.2.3",},
-							{ID: "bp.id.1", Version: "4.5.6",},
+							{ID: "bp.id.1", Version: "1.2.3"},
+							{ID: "bp.id.1", Version: "4.5.6"},
 						},
 						Groups: []GroupMetadata{
 							{
 								Buildpacks: []BuildpackRefMetadata{
-									{ID: "bp.id.1", Version: "1.2.3",},
+									{ID: "bp.id.1", Version: "1.2.3"},
 								},
 							},
 						},
@@ -90,13 +92,13 @@ func testMetadata(t *testing.T, when spec.G, it spec.S) {
 				it("should error", func() {
 					md := Metadata{
 						Buildpacks: []BuildpackMetadata{
-							{ID: "bp.id.1", Version: "1.2.3",},
-							{ID: "bp.id.1", Version: "4.5.6",},
+							{ID: "bp.id.1", Version: "1.2.3"},
+							{ID: "bp.id.1", Version: "4.5.6"},
 						},
 						Groups: []GroupMetadata{
 							{
 								Buildpacks: []BuildpackRefMetadata{
-									{ID: "bp.id.1", Version: "",},
+									{ID: "bp.id.1", Version: ""},
 								},
 							},
 						},
@@ -113,12 +115,12 @@ func testMetadata(t *testing.T, when spec.G, it spec.S) {
 				it("should error", func() {
 					md := Metadata{
 						Buildpacks: []BuildpackMetadata{
-							{ID: "bp.id.1", Version: "1.2.3",},
+							{ID: "bp.id.1", Version: "1.2.3"},
 						},
 						Groups: []GroupMetadata{
 							{
 								Buildpacks: []BuildpackRefMetadata{
-									{ID: "bp.id.no-exists", Version: "",},
+									{ID: "bp.id.no-exists", Version: ""},
 								},
 							},
 						},
@@ -133,12 +135,12 @@ func testMetadata(t *testing.T, when spec.G, it spec.S) {
 				it("should error", func() {
 					md := Metadata{
 						Buildpacks: []BuildpackMetadata{
-							{ID: "bp.id.1", Version: "1.2.3",},
+							{ID: "bp.id.1", Version: "1.2.3"},
 						},
 						Groups: []GroupMetadata{
 							{
 								Buildpacks: []BuildpackRefMetadata{
-									{ID: "bp.id.no-exists", Version: "4.5.6",},
+									{ID: "bp.id.no-exists", Version: "4.5.6"},
 								},
 							},
 						},

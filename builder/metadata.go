@@ -2,6 +2,7 @@ package builder
 
 import (
 	"fmt"
+
 	"github.com/buildpack/pack/lifecycle"
 	"github.com/buildpack/pack/style"
 )

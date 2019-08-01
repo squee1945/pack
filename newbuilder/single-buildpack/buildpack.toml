@@ -3,5 +3,5 @@
   version = "single.buildpack.v1"
   name = "Single Buildpack"
 
-[[buildpacks.stacks]]
+[[stacks]]
   id = "io.buildpacks.stacks.bionic"
