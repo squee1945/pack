@@ -149,7 +149,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 				h.Run(t, packCmd("set-default-builder", builder))
 			})
 
-			it.Focus("creates a runnable, rebuildable image on daemon from app dir", func() {
+			it("creates a runnable, rebuildable image on daemon from app dir", func() {
 				appPath := filepath.Join("testdata", "mock_app")
 				cmd := packCmd(
 					"build", repoName,
