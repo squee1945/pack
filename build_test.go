@@ -19,8 +19,8 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 
-	"github.com/buildpack/pack/builder"
 	"github.com/buildpack/pack/blob"
+	"github.com/buildpack/pack/builder"
 	"github.com/buildpack/pack/internal/mocks"
 	h "github.com/buildpack/pack/testhelpers"
 )
@@ -89,11 +89,11 @@ func testBuild(t *testing.T, when spec.G, it spec.S) {
 		logger := mocks.NewMockLogger(ioutil.Discard)
 
 		subject = &Client{
-			logger:           logger,
-			imageFetcher:     fakeImageFetcher,
-			buildpackFetcher: blob.NewFetcher(NewDownloader(logger, tmpDir)),
-			lifecycle:        fakeLifecycle,
-			docker:           docker,
+			logger:       logger,
+			imageFetcher: fakeImageFetcher,
+			blobFetcher:  blob.NewFetcher(NewDownloader(logger, tmpDir)),
+			lifecycle:    fakeLifecycle,
+			docker:       docker,
 		}
 	})
 

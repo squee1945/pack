@@ -8,7 +8,7 @@ import (
 	context "context"
 	reflect "reflect"
 
-	imgutil "github.com/blob/imgutil"
+	imgutil "github.com/buildpack/imgutil"
 	gomock "github.com/golang/mock/gomock"
 )
 
@@ -37,7 +37,7 @@ func (m *MockImageFetcher) EXPECT() *MockImageFetcherMockRecorder {
 
 // Fetch mocks base method
 func (m *MockImageFetcher) Fetch(arg0 context.Context, arg1 string, arg2, arg3 bool) (imgutil.Image, error) {
-	ret := m.ctrl.Call(m, "FetchLifecycle", arg0, arg1, arg2, arg3)
+	ret := m.ctrl.Call(m, "Fetch", arg0, arg1, arg2, arg3)
 	ret0, _ := ret[0].(imgutil.Image)
 	ret1, _ := ret[1].(error)
 	return ret0, ret1
@@ -45,5 +45,5 @@ func (m *MockImageFetcher) Fetch(arg0 context.Context, arg1 string, arg2, arg3 b
 
 // Fetch indicates an expected call of Fetch
 func (mr *MockImageFetcherMockRecorder) Fetch(arg0, arg1, arg2, arg3 interface{}) *gomock.Call {
-	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "FetchLifecycle", reflect.TypeOf((*MockImageFetcher)(nil).Fetch), arg0, arg1, arg2, arg3)
+	return mr.mock.ctrl.RecordCallWithMethodType(mr.mock, "Fetch", reflect.TypeOf((*MockImageFetcher)(nil).Fetch), arg0, arg1, arg2, arg3)
 }

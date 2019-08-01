@@ -1,8 +1,6 @@
 package builder
 
-import (
-	"github.com/buildpack/pack/lifecycle"
-)
+import "github.com/Masterminds/semver"
 
 const MetadataLabel = "io.buildpacks.builder.metadata"
 
@@ -11,13 +9,17 @@ type Metadata struct {
 	Buildpacks  []BuildpackMetadata `json:"buildpacks"`
 	Groups      []GroupMetadata     `json:"groups"`
 	Stack       StackMetadata       `json:"stack"`
-	Lifecycle   lifecycle.Lifecycle `json:"lifecycle"`
+	Lifecycle   LifecycleMetadata   `json:"lifecycle"`
 }
 
 type BuildpackMetadata struct {
 	ID      string `json:"id"`
 	Version string `json:"version"`
 	Latest  bool   `json:"latest"`
+}
+
+type LifecycleMetadata struct {
+	Version *semver.Version `json:"version"`
 }
 
 type GroupMetadata struct {

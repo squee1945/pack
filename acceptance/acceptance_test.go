@@ -30,9 +30,9 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 
+	"github.com/buildpack/pack/blob"
 	"github.com/buildpack/pack/cache"
 	"github.com/buildpack/pack/internal/archive"
-	"github.com/buildpack/pack/lifecycle"
 	h "github.com/buildpack/pack/testhelpers"
 )
 
@@ -44,7 +44,7 @@ var (
 	buildImage       = "pack-test/build"
 	runImageMirror   string
 	builder          string
-	lifecycleVersion = semver.MustParse(lifecycle.DefaultLifecycleVersion)
+	lifecycleVersion = semver.MustParse(blob.DefaultLifecycleVersion)
 	lifecycleV020    = semver.MustParse("0.2.0")
 	lifecycleV030    = semver.MustParse("0.3.0")
 )

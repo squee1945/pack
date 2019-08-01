@@ -28,7 +28,6 @@ func testInspectBuilder(t *testing.T, when spec.G, it spec.S) {
 	var (
 		subject          *Client
 		mockImageFetcher *mocks.MockImageFetcher
-		mockBPFetcher    *mocks.MockBuildpackFetcher
 		mockController   *gomock.Controller
 		builderImage     *fakes.Image
 		out              bytes.Buffer
@@ -37,12 +36,10 @@ func testInspectBuilder(t *testing.T, when spec.G, it spec.S) {
 	it.Before(func() {
 		mockController = gomock.NewController(t)
 		mockImageFetcher = mocks.NewMockImageFetcher(mockController)
-		mockBPFetcher = mocks.NewMockBuildpackFetcher(mockController)
 
 		subject = &Client{
-			logger:           m.NewMockLogger(&out),
-			imageFetcher:     mockImageFetcher,
-			buildpackFetcher: mockBPFetcher,
+			logger:       m.NewMockLogger(&out),
+			imageFetcher: mockImageFetcher,
 		}
 
 		builderImage = fakes.NewImage("some/builder", "", "")

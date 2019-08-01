@@ -3,7 +3,7 @@ id = "bp.one"
 version = "some-buildpack-version"
 
 [[stacks]]
-  id = "some.stack.id"
+id = "some.stack.id"
 
 [[stacks]]
-  id = "other.stack.id"
+id = "other.stack.id"

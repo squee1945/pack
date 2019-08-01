@@ -14,9 +14,9 @@ import (
 	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pkg/errors"
 
+	"github.com/buildpack/pack/blob"
 	"github.com/buildpack/pack/build"
 	"github.com/buildpack/pack/builder"
-	"github.com/buildpack/pack/blob"
 	"github.com/buildpack/pack/internal/archive"
 	"github.com/buildpack/pack/style"
 )
@@ -220,7 +220,7 @@ func (c *Client) processBuildpacks(buildpacks []string) ([]blob.Buildpack, build
 				return nil, builder.GroupMetadata{}, fmt.Errorf("buildpack %s: Windows only supports .tgz-based buildpacks", style.Symbol(bp))
 			}
 			c.logger.Debugf("fetching buildpack from %s", style.Symbol(bp))
-			fetchedBP, err := c.buildpackFetcher.FetchBuildpack(bp)
+			fetchedBP, err := c.blobFetcher.FetchBuildpack(bp)
 			if err != nil {
 				return nil, builder.GroupMetadata{}, errors.Wrapf(err, "failed to fetch buildpack from URI '%s'", bp)
 			}

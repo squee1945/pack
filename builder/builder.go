@@ -23,7 +23,6 @@ import (
 
 	"github.com/buildpack/pack/blob"
 	"github.com/buildpack/pack/internal/archive"
-	"github.com/buildpack/pack/lifecycle"
 	"github.com/buildpack/pack/style"
 )
 
@@ -153,9 +152,9 @@ func (b *Builder) AddBuildpack(bp blob.Buildpack) error {
 	return nil
 }
 
-func (b *Builder) SetLifecycle(md lifecycle.Lifecycle) error {
-	b.metadata.Lifecycle.Version = md.Version
-	b.lifecyclePath = md.Path
+func (b *Builder) SetLifecycle(lifecycle blob.Lifecycle) error {
+	b.metadata.Lifecycle.Version = lifecycle.Version
+	b.lifecyclePath = lifecycle.Blob.Path
 	return nil
 }
 
@@ -472,7 +471,7 @@ func (b *Builder) embedBuildpackTar(tw *tar.Writer, bp blob.Buildpack, baseTarDi
 		err error
 	)
 
-	rc, err := bp.Read()
+	rc, err := bp.Open()
 	if err != nil {
 		errors.Wrap(err, "read buildpack blob")
 	}
