@@ -276,13 +276,25 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 						cmd := packCmd(
 							"build", repoName,
 							"-p", filepath.Join("testdata", "mock_app"),
+
+							// tgz not in builder
 							"--buildpack", notBuilderTgz,
+
+							// with version
 							"--buildpack", "simple/layers@simple-layers-version",
+
+							// without version
 							"--buildpack", "noop.buildpack",
+
+							// latest (for backwards compatibility)
+							"--buildpack", "read/env@latest",
+							"--env", "DETECT_ENV_BUILDPACK=true",
 						)
 						output := h.Run(t, cmd)
 						h.AssertContains(t, output, "NOOP Buildpack")
+						h.AssertContains(t, output, "Read Env Buildpack")
 						h.AssertContains(t, output, fmt.Sprintf("Successfully built image '%s'", repoName))
+
 						t.Log("app is runnable")
 						assertMockAppRunsWithOutput(t, repoName,
 							"Local Buildpack Dep Contents",

@@ -12,6 +12,18 @@ type Buildpack struct {
 	Path    string
 	Version string
 	Stacks  []Stack
+	Order   Order
+}
+
+type Order []Group
+
+type Group struct {
+	Group []BuildpackRef
+}
+
+type BuildpackRef struct {
+	ID      string
+	Version string
 }
 
 type Stack struct {

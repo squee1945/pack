@@ -202,54 +202,43 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 				h.AssertOnTarEntry(t, layerTar, "/buildpacks/order.toml", h.ContentEquals("some content"))
 			})
 
-			// TODO
-			when.Pend("no version of the group buildpack exists in the image", func() {
-				it("errors", func() {
-					err := subject.SetOrder([]builder.GroupMetadata{
+			when("order is invalid", func() {
+				it("produces an error", func() {
+					subject.SetOrder(builder.OrderMetadata{
 						{Buildpacks: []builder.BuildpackRefMetadata{
 							{
-								ID:      "some-buildpack-id",
-								Version: "some-buildpack-version",
+								ID:      "missing-buildpack-id",
+								Version: "missing-buildpack-version",
 							},
 						}},
 					})
-					h.AssertError(t, err, "no versions of buildpack 'some-buildpack-id' were found on the builder")
+
+					err := subject.Save()
+
+					h.AssertError(t, err, "no versions of buildpack 'missing-buildpack-id' were found on the builder")
 				})
 			})
 
-			// TODO
-			when.Pend("wrong versions of the group buildpack exists in the image", func() {
-				it("errors", func() {
-					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
+			when.Pend("buildpack is missing both order and stack", func() {
+
+			})
+
+			when.Pend("nested buildpack does not exist", func() {
+
+			})
+
+			when.Pend("buildpack stack id does not match", func() {
+				it("returns an error", func() {
+					subject.AddBuildpack(buildpack.Buildpack{
 						ID:      "some-buildpack-id",
 						Version: "some-buildpack-version",
 						Path:    filepath.Join("testdata", "buildpack"),
-						Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
-					}))
-					err := subject.SetOrder([]builder.GroupMetadata{
-						{Buildpacks: []builder.BuildpackRefMetadata{
-							{
-								ID:      "some-buildpack-id",
-								Version: "wrong-version",
-							},
-						}},
+						Stacks:  []buildpack.Stack{{ID: "other.stack.id"}},
 					})
-					h.AssertError(t, err, "buildpack 'some-buildpack-id' with version 'wrong-version' was not found on the builder")
-				})
-			})
 
-			// TODO
-			when.Pend("the group buildpack has latest version", func() {
-				it("fails if no buildpack is tagged as latest", func() {
-					err := subject.SetOrder([]builder.GroupMetadata{
-						{Buildpacks: []builder.BuildpackRefMetadata{
-							{
-								ID:      "some-buildpack-id",
-								Version: "latest",
-							},
-						}},
-					})
-					h.AssertError(t, err, "there is no version of buildpack 'some-buildpack-id' marked as latest")
+					err := subject.Save()
+
+					h.AssertError(t, err, "buildpack 'some-buildpack-id' version 'some-buildpack-version' does not support stack 'some.stack.id'")
 				})
 			})
 		})
@@ -331,132 +320,147 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 		})
 
 		when("#AddBuildpack", func() {
+			var buildpackTgz string
+
 			it.Before(func() {
 				err := os.Chmod(filepath.Join("testdata", "buildpack", "buildpack-file"), 0644)
 				h.AssertNil(t, err)
-			})
+				buildpackTgz = h.CreateTgz(t, filepath.Join("testdata", "buildpack"), "./", 0644)
 
-			when("buildpack has matching stack", func() {
-				var buildpackTgz string
-
-				it.Before(func() {
-					buildpackTgz = h.CreateTgz(t, filepath.Join("testdata", "buildpack"), "./", 0644)
-
-					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
-						ID:      "tgz-buildpack-id",
-						Version: "tgz-buildpack-version",
-						Path:    buildpackTgz,
-						Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
-					}))
-
-					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
-						ID:      "latest-buildpack-id",
-						Version: "latest-buildpack-version",
-						Path:    buildpackTgz,
-						Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
-					}))
-
-					if runtime.GOOS != "windows" {
-						h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
-							ID:      "dir-buildpack-id",
-							Version: "dir-buildpack-version",
-							Path:    filepath.Join("testdata", "buildpack"),
-							Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
-						}))
-					}
-
-					h.AssertNil(t, subject.Save())
-					h.AssertEq(t, baseImage.IsSaved(), true)
+				subject.AddBuildpack(buildpack.Buildpack{
+					ID:      "buildpack-1-id",
+					Version: "buildpack-1-version",
+					Path:    buildpackTgz,
+					Order: buildpack.Order{
+						{
+							Group: []buildpack.BuildpackRef{
+								{
+									ID:      "buildpack-2-id",
+									Version: "buildpack-2-version",
+								},
+							},
+						},
+					},
 				})
 
-				it.After(func() {
-					h.AssertNil(t, os.Remove(buildpackTgz))
+				subject.AddBuildpack(buildpack.Buildpack{
+					ID:      "buildpack-2-id",
+					Version: "buildpack-2-version",
+					Path:    buildpackTgz,
+					Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
 				})
 
-				it("adds the buildpack as an image layer", func() {
-					var (
-						layerTar string
-						err      error
-					)
-
-					layerTar, err = baseImage.FindLayerWithPath("/buildpacks/tgz-buildpack-id/tgz-buildpack-version")
-					h.AssertNil(t, err)
-
-					h.AssertOnTarEntry(t, layerTar, "/buildpacks/tgz-buildpack-id/tgz-buildpack-version",
-						h.IsDirectory(),
-					)
-
-					h.AssertOnTarEntry(t, layerTar, "/buildpacks/tgz-buildpack-id/tgz-buildpack-version/buildpack-file",
-						h.ContentEquals("buildpack-contents"),
-						h.HasOwnerAndGroup(1234, 4321),
-						h.HasFileMode(0644),
-					)
-
-					layerTar, err = baseImage.FindLayerWithPath("/buildpacks/latest-buildpack-id/latest-buildpack-version")
-					h.AssertNil(t, err)
-					h.AssertOnTarEntry(t, layerTar, "/buildpacks/latest-buildpack-id/latest-buildpack-version",
-						h.IsDirectory(),
-					)
-
-					h.AssertOnTarEntry(t, layerTar, "/buildpacks/latest-buildpack-id/latest-buildpack-version/buildpack-file",
-						h.ContentEquals("buildpack-contents"),
-						h.HasOwnerAndGroup(1234, 4321),
-						h.HasFileMode(0644),
-					)
-
-					if runtime.GOOS != "windows" {
-						layerTar, err = baseImage.FindLayerWithPath("/buildpacks/dir-buildpack-id/dir-buildpack-version")
-						h.AssertNil(t, err)
-						h.AssertOnTarEntry(t, layerTar, "/buildpacks/dir-buildpack-id/dir-buildpack-version",
-							h.IsDirectory(),
-						)
-
-						h.AssertOnTarEntry(t, layerTar, "/buildpacks/dir-buildpack-id/dir-buildpack-version/buildpack-file",
-							h.ContentEquals("buildpack-contents"),
-							h.HasOwnerAndGroup(1234, 4321),
-							h.HasFileMode(0644),
-						)
-					}
+				subject.AddBuildpack(buildpack.Buildpack{
+					ID:      "buildpack-3-id",
+					Version: "buildpack-3-version",
+					Path:    buildpackTgz,
+					Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
 				})
 
-				it("adds the buildpack metadata", func() {
-					label, err := baseImage.Label("io.buildpacks.builder.metadata")
-					h.AssertNil(t, err)
-
-					var metadata builder.Metadata
-					h.AssertNil(t, json.Unmarshal([]byte(label), &metadata))
-					if runtime.GOOS == "windows" {
-						h.AssertEq(t, len(metadata.Buildpacks), 2)
-					} else {
-						h.AssertEq(t, len(metadata.Buildpacks), 3)
-					}
-
-					h.AssertEq(t, metadata.Buildpacks[0].ID, "tgz-buildpack-id")
-					h.AssertEq(t, metadata.Buildpacks[0].Version, "tgz-buildpack-version")
-					h.AssertEq(t, metadata.Buildpacks[0].Latest, true)
-
-					h.AssertEq(t, metadata.Buildpacks[1].ID, "latest-buildpack-id")
-					h.AssertEq(t, metadata.Buildpacks[1].Version, "latest-buildpack-version")
-					h.AssertEq(t, metadata.Buildpacks[1].Latest, true)
-
-					if runtime.GOOS != "windows" {
-						h.AssertEq(t, metadata.Buildpacks[2].ID, "dir-buildpack-id")
-						h.AssertEq(t, metadata.Buildpacks[2].Version, "dir-buildpack-version")
-						h.AssertEq(t, metadata.Buildpacks[2].Latest, true)
-					}
-				})
-			})
-
-			when("buildpack stack id does not match", func() {
-				it("returns an error", func() {
-					err := subject.AddBuildpack(buildpack.Buildpack{
-						ID:      "some-buildpack-id",
-						Version: "some-buildpack-version",
+				if runtime.GOOS != "windows" {
+					subject.AddBuildpack(buildpack.Buildpack{
+						ID:      "dir-buildpack-id",
+						Version: "dir-buildpack-version",
 						Path:    filepath.Join("testdata", "buildpack"),
-						Stacks:  []buildpack.Stack{{ID: "other.stack.id"}},
+						Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
 					})
-					h.AssertError(t, err, "buildpack 'some-buildpack-id' version 'some-buildpack-version' does not support stack 'some.stack.id'")
-				})
+				}
+
+				h.AssertNil(t, subject.Save())
+				h.AssertEq(t, baseImage.IsSaved(), true)
+			})
+
+			it.After(func() {
+				h.AssertNil(t, os.Remove(buildpackTgz))
+			})
+
+			it("adds the buildpack as an image layer", func() {
+				var (
+					layerTar string
+					err      error
+				)
+
+				layerTar, err = baseImage.FindLayerWithPath("/buildpacks/buildpack-1-id/buildpack-1-version")
+				h.AssertNil(t, err)
+
+				h.AssertOnTarEntry(t, layerTar, "/buildpacks/buildpack-1-id/buildpack-1-version",
+					h.IsDirectory(),
+				)
+
+				h.AssertOnTarEntry(t, layerTar, "/buildpacks/buildpack-1-id/buildpack-1-version/buildpack-file",
+					h.ContentEquals("buildpack-contents"),
+					h.HasOwnerAndGroup(1234, 4321),
+					h.HasFileMode(0644),
+				)
+
+				layerTar, err = baseImage.FindLayerWithPath("/buildpacks/buildpack-2-id/buildpack-2-version")
+				h.AssertNil(t, err)
+				h.AssertOnTarEntry(t, layerTar, "/buildpacks/buildpack-2-id/buildpack-2-version",
+					h.IsDirectory(),
+				)
+
+				h.AssertOnTarEntry(t, layerTar, "/buildpacks/buildpack-2-id/buildpack-2-version/buildpack-file",
+					h.ContentEquals("buildpack-contents"),
+					h.HasOwnerAndGroup(1234, 4321),
+					h.HasFileMode(0644),
+				)
+
+				layerTar, err = baseImage.FindLayerWithPath("/buildpacks/buildpack-3-id/buildpack-3-version")
+				h.AssertNil(t, err)
+				h.AssertOnTarEntry(t, layerTar, "/buildpacks/buildpack-3-id/buildpack-3-version",
+					h.IsDirectory(),
+				)
+
+				h.AssertOnTarEntry(t, layerTar, "/buildpacks/buildpack-3-id/buildpack-3-version/buildpack-file",
+					h.ContentEquals("buildpack-contents"),
+					h.HasOwnerAndGroup(1234, 4321),
+					h.HasFileMode(0644),
+				)
+
+				if runtime.GOOS != "windows" {
+					layerTar, err = baseImage.FindLayerWithPath("/buildpacks/dir-buildpack-id/dir-buildpack-version")
+					h.AssertNil(t, err)
+					h.AssertOnTarEntry(t, layerTar, "/buildpacks/dir-buildpack-id/dir-buildpack-version",
+						h.IsDirectory(),
+					)
+
+					h.AssertOnTarEntry(t, layerTar, "/buildpacks/dir-buildpack-id/dir-buildpack-version/buildpack-file",
+						h.ContentEquals("buildpack-contents"),
+						h.HasOwnerAndGroup(1234, 4321),
+						h.HasFileMode(0644),
+					)
+				}
+			})
+
+			it("adds the buildpack metadata", func() {
+				label, err := baseImage.Label("io.buildpacks.builder.metadata")
+				h.AssertNil(t, err)
+
+				var metadata builder.Metadata
+				h.AssertNil(t, json.Unmarshal([]byte(label), &metadata))
+				if runtime.GOOS == "windows" {
+					h.AssertEq(t, len(metadata.Buildpacks), 3)
+				} else {
+					h.AssertEq(t, len(metadata.Buildpacks), 4)
+				}
+
+				h.AssertEq(t, metadata.Buildpacks[0].ID, "buildpack-1-id")
+				h.AssertEq(t, metadata.Buildpacks[0].Version, "buildpack-1-version")
+				h.AssertEq(t, metadata.Buildpacks[0].Latest, true)
+
+				h.AssertEq(t, metadata.Buildpacks[1].ID, "buildpack-2-id")
+				h.AssertEq(t, metadata.Buildpacks[1].Version, "buildpack-2-version")
+				h.AssertEq(t, metadata.Buildpacks[1].Latest, true)
+
+				h.AssertEq(t, metadata.Buildpacks[2].ID, "buildpack-3-id")
+				h.AssertEq(t, metadata.Buildpacks[2].Version, "buildpack-3-version")
+				h.AssertEq(t, metadata.Buildpacks[2].Latest, true)
+
+				if runtime.GOOS != "windows" {
+					h.AssertEq(t, metadata.Buildpacks[3].ID, "dir-buildpack-id")
+					h.AssertEq(t, metadata.Buildpacks[3].Version, "dir-buildpack-version")
+					h.AssertEq(t, metadata.Buildpacks[3].Latest, true)
+				}
 			})
 
 			when("base image already has metadata", func() {
@@ -470,12 +474,12 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 					subject, err = builder.New(baseImage, "some/builder")
 					h.AssertNil(t, err)
 
-					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
+					subject.AddBuildpack(buildpack.Buildpack{
 						ID:      "some-buildpack-id",
 						Version: "some-buildpack-version",
 						Path:    filepath.Join("testdata", "buildpack"),
 						Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
-					}))
+					})
 					h.AssertNil(t, subject.Save())
 					h.AssertEq(t, baseImage.IsSaved(), true)
 				})
@@ -506,25 +510,25 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 		when("#SetOrder", func() {
 			when("the buildpacks exist in the image", func() {
 				it.Before(func() {
-					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
+					subject.AddBuildpack(buildpack.Buildpack{
 						ID:      "some-buildpack-id",
 						Version: "some-buildpack-version",
 						Path:    filepath.Join("testdata", "buildpack"),
 						Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
-					}))
-					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
+					})
+					subject.AddBuildpack(buildpack.Buildpack{
 						ID:      "optional-buildpack-id",
 						Version: "older-optional-buildpack-version",
 						Path:    filepath.Join("testdata", "buildpack"),
 						Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
-					}))
-					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
+					})
+					subject.AddBuildpack(buildpack.Buildpack{
 						ID:      "optional-buildpack-id",
 						Version: "optional-buildpack-version",
 						Path:    filepath.Join("testdata", "buildpack"),
 						Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
-					}))
-					h.AssertNil(t, subject.SetOrder([]builder.GroupMetadata{
+					})
+					subject.SetOrder(builder.OrderMetadata{
 						{Buildpacks: []builder.BuildpackRefMetadata{
 							{
 								ID:      "some-buildpack-id",
@@ -536,7 +540,8 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 								Optional: true,
 							},
 						}},
-					}))
+					})
+
 					h.AssertNil(t, subject.Save())
 					h.AssertEq(t, baseImage.IsSaved(), true)
 				})

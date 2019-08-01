@@ -156,13 +156,12 @@ func New(img imgutil.Image, name string) (*Builder, error) {
 	}, nil
 }
 
-func (b *Builder) AddBuildpack(bp buildpack.Buildpack) error {
-	if !bp.SupportsStack(b.StackID) {
-		return fmt.Errorf("buildpack %s version %s does not support stack %s", style.Symbol(bp.ID), style.Symbol(bp.Version), style.Symbol(b.StackID))
-	}
+func (b *Builder) AddBuildpack(bp buildpack.Buildpack) {
+	//if !bp.SupportsStack(b.StackID) {
+	//	return fmt.Errorf("buildpack %s version %s does not support stack %s", style.Symbol(bp.ID), style.Symbol(bp.Version), style.Symbol(b.StackID))
+	//}
 	b.buildpacks = append(b.buildpacks, bp)
 	b.metadata.Buildpacks = append(b.metadata.Buildpacks, BuildpackMetadata{ID: bp.ID, Version: bp.Version})
-	return nil
 }
 
 func (b *Builder) SetLifecycle(md lifecycle.Metadata) error {
@@ -175,11 +174,9 @@ func (b *Builder) SetEnv(env map[string]string) {
 	b.env = env
 }
 
-// TODO: remove error?
-func (b *Builder) SetOrder(groups []GroupMetadata) error {
-	b.metadata.Groups = groups
+func (b *Builder) SetOrder(order OrderMetadata) {
+	b.metadata.Groups = order
 	b.replaceOrder = true
-	return nil
 }
 
 func (b *Builder) SetDescription(description string) {

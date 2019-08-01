@@ -70,16 +70,12 @@ func (c *Client) CreateBuilder(ctx context.Context, opts CreateBuilderOptions) e
 			return fmt.Errorf("buildpack from URI '%s' has version '%s' which does not match version '%s' from builder config", b.URI, fetchedBuildpack.Version, b.Version)
 		}
 
-		if err := builderImage.AddBuildpack(fetchedBuildpack); err != nil {
-			return err
-		}
+		builderImage.AddBuildpack(fetchedBuildpack)
 	}
 
 	groupMetadata := opts.BuilderConfig.Order.ToMetadata()
-	if err := builderImage.SetOrder(groupMetadata); err != nil {
-		return errors.Wrap(err, "builder config has invalid groups")
-	}
 
+	builderImage.SetOrder(groupMetadata)
 	builderImage.SetStackInfo(opts.BuilderConfig.Stack)
 
 	lifecycleMd, err := c.lifecycleFetcher.Fetch(lifecycleVersion, opts.BuilderConfig.Lifecycle.URI)

@@ -250,10 +250,13 @@ func isBuildpackId(path string) bool {
 func (c *Client) parseBuildpack(bp string) (string, string) {
 	parts := strings.Split(bp, "@")
 	if len(parts) == 2 {
-		// TODO: replace latest with empty string
+		if parts[1] == "latest" {
+			return parts[0], ""
+		}
+
 		return parts[0], parts[1]
 	}
-	c.logger.Debugf("No version for %s buildpack provided, will use %s", style.Symbol(parts[0]), style.Symbol(parts[0]+"@latest"))
+
 	return parts[0], ""
 }
 
@@ -266,15 +269,11 @@ func (c *Client) createEphemeralBuilder(rawBuilderImage imgutil.Image, env map[s
 	bldr.SetEnv(env)
 	for _, bp := range buildpacks {
 		c.logger.Debugf("adding buildpack %s version %s to builder", style.Symbol(bp.ID), style.Symbol(bp.Version))
-		if err := bldr.AddBuildpack(bp); err != nil {
-			return nil, errors.Wrapf(err, "failed to add buildpack %s version %s to builder", style.Symbol(bp.ID), style.Symbol(bp.Version))
-		}
+		bldr.AddBuildpack(bp)
 	}
 	if len(group.Buildpacks) > 0 {
 		c.logger.Debug("setting custom order")
-		if err := bldr.SetOrder([]builder.GroupMetadata{group}); err != nil {
-			return nil, errors.Wrap(err, "failed to set custom buildpack order")
-		}
+		bldr.SetOrder(builder.OrderMetadata{group})
 	}
 	if err := bldr.Save(); err != nil {
 		return nil, err
