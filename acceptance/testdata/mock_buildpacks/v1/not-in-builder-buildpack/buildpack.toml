@@ -1,3 +1,5 @@
+schema = "1"
+
 [buildpack]
   id = "local/bp"
   version = "local-bp-version"

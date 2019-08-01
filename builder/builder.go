@@ -175,40 +175,11 @@ func (b *Builder) SetEnv(env map[string]string) {
 	b.env = env
 }
 
+// TODO: remove error?
 func (b *Builder) SetOrder(groups []GroupMetadata) error {
-	for _, group := range groups {
-		for _, groupBP := range group.Buildpacks {
-			mdBPs := b.bpsWithID(groupBP.ID)
-			if len(mdBPs) == 0 {
-				return fmt.Errorf("no versions of buildpack %s were found on the builder", style.Symbol(groupBP.ID))
-			}
-			if !hasBPWithVersion(mdBPs, groupBP.Version) {
-				return fmt.Errorf("buildpack %s with version %s was not found on the builder", style.Symbol(groupBP.ID), style.Symbol(groupBP.Version))
-			}
-		}
-	}
 	b.metadata.Groups = groups
 	b.replaceOrder = true
 	return nil
-}
-
-func (b *Builder) bpsWithID(id string) []BuildpackMetadata {
-	var matchingBps []BuildpackMetadata
-	for _, bp := range b.metadata.Buildpacks {
-		if id == bp.ID {
-			matchingBps = append(matchingBps, bp)
-		}
-	}
-	return matchingBps
-}
-
-func hasBPWithVersion(bps []BuildpackMetadata, version string) bool {
-	for _, bp := range bps {
-		if (bp.Version == version) || (bp.Latest && version == "latest") {
-			return true
-		}
-	}
-	return false
 }
 
 func (b *Builder) SetDescription(description string) {
@@ -225,6 +196,10 @@ func (b *Builder) SetStackInfo(stackConfig StackConfig) {
 }
 
 func (b *Builder) Save() error {
+	if err := processMetadata(&b.metadata); err != nil {
+		return errors.Wrap(err, "processing metadata")
+	}
+
 	tmpDir, err := ioutil.TempDir("", "create-builder-scratch")
 	if err != nil {
 		return err
@@ -285,7 +260,7 @@ func (b *Builder) Save() error {
 		return errors.Wrap(err, "adding stack.tar layer")
 	}
 
-	label, err := json.Marshal(shimLatestFlags(b.metadata))
+	label, err := json.Marshal(b.metadata)
 	if err != nil {
 		return errors.Wrap(err, "failed marshal builder image metadata")
 	}
@@ -300,30 +275,6 @@ func (b *Builder) Save() error {
 
 	_, err = b.image.Save()
 	return err
-}
-
-// shimLatestFlags enables the `Latest` flag for each buildpack that is the only version of its kind (i.e. ID)
-// present. It allows for builders to be somewhat backwards-compatible with older versions of pack (< 0.4.0)
-// when running `pack build <app> --buildpack <some buildpack>` (without specifying a buildpack version
-// in which case '@latest' is assumed) or `pack build <app> --buildpack <some buildpack>@latest`.
-//
-// It should be removed once we're no longer supporting those versions of pack.
-//
-// It does NOT enable the `Latest` flag when there is more than one version of a particular buildpack present.
-func shimLatestFlags(md Metadata) Metadata {
-	byID := map[string][]*BuildpackMetadata{}
-	for b := range md.Buildpacks {
-		id := md.Buildpacks[b].ID
-		byID[id] = append(byID[id], &md.Buildpacks[b])
-	}
-
-	for _, bps := range byID {
-		if len(bps) == 1 {
-			bps[0].Latest = true
-		}
-	}
-
-	return md
 }
 
 func userAndGroupIDs(img imgutil.Image) (int, int, error) {
@@ -413,22 +364,14 @@ func (b *Builder) rootOwnedDir(path string, time time.Time) *tar.Header {
 func (b *Builder) orderLayer(dest string) (string, error) {
 	buf := &bytes.Buffer{}
 
-	var orderToml interface{}
-	if b.GetLifecycleVersion().GreaterThan(semver.MustParse("0.3.0")) {
-		orderToml = orderTOML{Order: b.metadata.Groups.ToConfig()}
+	var tomlData interface{}
+	if b.GetLifecycleVersion().LessThan(semver.MustParse("0.4.0")) {
+		tomlData = v1OrderTOMLFromOrderTOML(orderTOML{Order: b.metadata.Groups.ToConfig()})
 	} else {
-		orderToml = struct{
-			Groups []struct{
-				Buildpacks []BuildpackRefConfig
-			} `toml:"groups"`
-		}{
-			Groups: []struct{
-				Buildpacks []BuildpackRefConfig
-			},
-		}
+		tomlData = orderTOML{Order: b.metadata.Groups.ToConfig()}
 	}
 
-	err := toml.NewEncoder(buf).Encode(orderToml)
+	err := toml.NewEncoder(buf).Encode(tomlData)
 	if err != nil {
 		return "", errors.Wrapf(err, "failed to marshal order.toml")
 	}

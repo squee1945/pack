@@ -3,5 +3,5 @@
   version = "simple-layers-version"
   name = "Simple Layers Buildpack"
 
-[[buildpacks.stacks]]
+[[stacks]]
   id = "pack.test.stack"

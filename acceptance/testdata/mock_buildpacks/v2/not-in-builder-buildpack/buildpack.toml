@@ -3,5 +3,5 @@
   version = "local-bp-version"
   name = "Not in Builder Buildpack"
 
-[[buildpacks.stacks]]
+[[stacks]]
   id = "pack.test.stack"

@@ -249,10 +249,11 @@ func isBuildpackId(path string) bool {
 func (c *Client) parseBuildpack(bp string) (string, string) {
 	parts := strings.Split(bp, "@")
 	if len(parts) == 2 {
+		// TODO: replace latest with empty string
 		return parts[0], parts[1]
 	}
 	c.logger.Debugf("No version for %s buildpack provided, will use %s", style.Symbol(parts[0]), style.Symbol(parts[0]+"@latest"))
-	return parts[0], "latest"
+	return parts[0], ""
 }
 
 func (c *Client) createEphemeralBuilder(rawBuilderImage imgutil.Image, env map[string]string, group builder.GroupMetadata, buildpacks []buildpack.Buildpack) (*builder.Builder, error) {

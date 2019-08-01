@@ -1,3 +1,5 @@
+schema = "2"
+
 [[buildpacks]]
   id = "simple/layers"
   version = "simple-layers-version"
@@ -12,7 +14,6 @@
   id = "noop.buildpack"
   version = "noop.buildpack.version"
   uri = "noop-buildpack.tgz"
-  latest = true
 
 [[order]]
 [[order.group]]

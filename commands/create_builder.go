@@ -24,7 +24,7 @@ func CreateBuilder(logger logging.Logger, client PackClient) *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "create-builder <image-name> --builder-config <builder-config-path>",
 		Args:  cobra.ExactArgs(1),
-		Short: "Create builder image",
+		Short: "create builder image",
 		RunE: logError(logger, func(cmd *cobra.Command, args []string) error {
 			builderConfig, err := builder.ReadConfig(flags.BuilderTomlPath)
 			if err != nil {

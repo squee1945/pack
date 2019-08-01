@@ -3,5 +3,5 @@
   version = "other-stack-version"
   name = "Other Stack Buildpack"
 
-[[buildpacks.stacks]]
+[[stacks]]
   id = "other.stack"

@@ -3,5 +3,5 @@
   version = "read-env-version"
   name = "Buildpack Reads Env"
 
-[[buildpacks.stacks]]
+[[stacks]]
   id = "pack.test.stack"

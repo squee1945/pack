@@ -3,5 +3,5 @@
   version = "noop.buildpack.version"
   name = "NOOP Buildpack"
 
-[[buildpacks.stacks]]
+[[stacks]]
   id = "pack.test.stack"
