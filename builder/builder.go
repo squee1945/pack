@@ -363,9 +363,10 @@ func (b *Builder) rootOwnedDir(path string, time time.Time) *tar.Header {
 
 func (b *Builder) orderLayer(dest string) (string, error) {
 	buf := &bytes.Buffer{}
+	lifecycleVersion := b.GetLifecycleVersion()
 
 	var tomlData interface{}
-	if b.GetLifecycleVersion().LessThan(semver.MustParse("0.4.0")) {
+	if lifecycleVersion != nil && lifecycleVersion.LessThan(semver.MustParse("0.4.0")) {
 		tomlData = v1OrderTOMLFromOrderTOML(orderTOML{Order: b.metadata.Groups.ToConfig()})
 	} else {
 		tomlData = orderTOML{Order: b.metadata.Groups.ToConfig()}

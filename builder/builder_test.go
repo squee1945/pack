@@ -237,6 +237,21 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 					h.AssertError(t, err, "buildpack 'some-buildpack-id' with version 'wrong-version' was not found on the builder")
 				})
 			})
+
+			// TODO
+			when.Pend("the group buildpack has latest version", func() {
+				it("fails if no buildpack is tagged as latest", func() {
+					err := subject.SetOrder([]builder.GroupMetadata{
+						{Buildpacks: []builder.BuildpackRefMetadata{
+							{
+								ID:      "some-buildpack-id",
+								Version: "latest",
+							},
+						}},
+					})
+					h.AssertError(t, err, "there is no version of buildpack 'some-buildpack-id' marked as latest")
+				})
+			})
 		})
 
 		when("#SetLifecycle", func() {
@@ -331,16 +346,14 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 						ID:      "tgz-buildpack-id",
 						Version: "tgz-buildpack-version",
 						Path:    buildpackTgz,
-						// Latest:  false,
-						Stacks: []buildpack.Stack{{ID: "some.stack.id"}},
+						Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
 					}))
 
 					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
 						ID:      "latest-buildpack-id",
 						Version: "latest-buildpack-version",
 						Path:    buildpackTgz,
-						// Latest:  true,
-						Stacks: []buildpack.Stack{{ID: "some.stack.id"}},
+						Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
 					}))
 
 					if runtime.GOOS != "windows" {
@@ -406,19 +419,6 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 					}
 				})
 
-				it("adds a symlink to the buildpack layer if latest is true", func() {
-					layerTar, err := baseImage.FindLayerWithPath("/buildpacks/latest-buildpack-id")
-					h.AssertNil(t, err)
-
-					h.AssertOnTarEntry(t,
-						layerTar,
-						"/buildpacks/latest-buildpack-id/latest",
-						h.SymlinksTo("/buildpacks/latest-buildpack-id/latest-buildpack-version"),
-						h.HasOwnerAndGroup(0, 0),
-						h.HasFileMode(0644),
-					)
-				})
-
 				it("adds the buildpack metadata", func() {
 					label, err := baseImage.Label("io.buildpacks.builder.metadata")
 					h.AssertNil(t, err)
@@ -433,7 +433,7 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 
 					h.AssertEq(t, metadata.Buildpacks[0].ID, "tgz-buildpack-id")
 					h.AssertEq(t, metadata.Buildpacks[0].Version, "tgz-buildpack-version")
-					h.AssertEq(t, metadata.Buildpacks[0].Latest, false)
+					h.AssertEq(t, metadata.Buildpacks[0].Latest, true)
 
 					h.AssertEq(t, metadata.Buildpacks[1].ID, "latest-buildpack-id")
 					h.AssertEq(t, metadata.Buildpacks[1].Version, "latest-buildpack-version")
@@ -442,7 +442,7 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 					if runtime.GOOS != "windows" {
 						h.AssertEq(t, metadata.Buildpacks[2].ID, "dir-buildpack-id")
 						h.AssertEq(t, metadata.Buildpacks[2].Version, "dir-buildpack-version")
-						h.AssertEq(t, metadata.Buildpacks[2].Latest, false)
+						h.AssertEq(t, metadata.Buildpacks[2].Latest, true)
 					}
 				})
 			})
@@ -498,7 +498,7 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 					// adds new buildpack
 					h.AssertEq(t, metadata.Buildpacks[1].ID, "some-buildpack-id")
 					h.AssertEq(t, metadata.Buildpacks[1].Version, "some-buildpack-version")
-					h.AssertEq(t, metadata.Buildpacks[1].Latest, false)
+					h.AssertEq(t, metadata.Buildpacks[1].Latest, true)
 				})
 			})
 		})
@@ -521,9 +521,8 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 					h.AssertNil(t, subject.AddBuildpack(buildpack.Buildpack{
 						ID:      "optional-buildpack-id",
 						Version: "optional-buildpack-version",
-						// Latest:  true,
-						Path:   filepath.Join("testdata", "buildpack"),
-						Stacks: []buildpack.Stack{{ID: "some.stack.id"}},
+						Path:    filepath.Join("testdata", "buildpack"),
+						Stacks:  []buildpack.Stack{{ID: "some.stack.id"}},
 					}))
 					h.AssertNil(t, subject.SetOrder([]builder.GroupMetadata{
 						{Buildpacks: []builder.BuildpackRefMetadata{
@@ -533,7 +532,7 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 							},
 							{
 								ID:       "optional-buildpack-id",
-								Version:  "latest",
+								Version:  "optional-buildpack-version",
 								Optional: true,
 							},
 						}},
@@ -553,7 +552,7 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 
   [[order.group]]
     id = "optional-buildpack-id"
-    version = "latest"
+    version = "optional-buildpack-version"
     optional = true
 `))
 				})
@@ -572,22 +571,8 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 					h.AssertEq(t, metadata.Groups[0].Buildpacks[0].Version, "some-buildpack-version")
 
 					h.AssertEq(t, metadata.Groups[0].Buildpacks[1].ID, "optional-buildpack-id")
-					h.AssertEq(t, metadata.Groups[0].Buildpacks[1].Version, "latest")
+					h.AssertEq(t, metadata.Groups[0].Buildpacks[1].Version, "optional-buildpack-version")
 					h.AssertEq(t, metadata.Groups[0].Buildpacks[1].Optional, true)
-				})
-
-				when("the group buildpack has latest version", func() {
-					it("fails if no buildpack is tagged as latest", func() {
-						err := subject.SetOrder([]builder.GroupMetadata{
-							{Buildpacks: []builder.BuildpackRefMetadata{
-								{
-									ID:      "some-buildpack-id",
-									Version: "latest",
-								},
-							}},
-						})
-						h.AssertError(t, err, "there is no version of buildpack 'some-buildpack-id' marked as latest")
-					})
 				})
 			})
 		})
