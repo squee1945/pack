@@ -206,10 +206,7 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 				it("produces an error", func() {
 					subject.SetOrder(builder.OrderMetadata{
 						{Buildpacks: []builder.BuildpackRefMetadata{
-							{
-								ID:      "missing-buildpack-id",
-								Version: "missing-buildpack-version",
-							},
+							{ID: "missing-buildpack-id", Version: "missing-buildpack-version",},
 						}},
 					})
 
@@ -219,28 +216,105 @@ func testBuilder(t *testing.T, when spec.G, it spec.S) {
 				})
 			})
 
-			when.Pend("buildpack is missing both order and stack", func() {
+			when("validating buildpacks", func() {
+				when("buildpack is missing both order and stack", func() {
+					it("returns an error", func() {
+						subject.AddBuildpack(buildpack.Buildpack{
+							ID:      "some-buildpack-id",
+							Version: "some-buildpack-version",
+							Path:    filepath.Join("testdata", "buildpack"),
+						})
 
-			})
+						err := subject.Save()
 
-			when.Pend("nested buildpack does not exist", func() {
+						h.AssertError(t, err, "buildpack 'some-buildpack-id@some-buildpack-version' must have either stacks or an order defined")
+					})
+				})
 
-			})
+				when("buildpack has both order and stack", func() {
+					it("returns an error", func() {
+						subject.AddBuildpack(buildpack.Buildpack{
+							ID:      "some-buildpack-id",
+							Version: "some-buildpack-version",
+							Path:    filepath.Join("testdata", "buildpack"),
+							Order: buildpack.Order{
+								{
+									Group: []buildpack.BuildpackRef{
+										{ID: "some-buildpack-id", Version: "some-buildpack-version",},
+									},
+								},
+							},
+							Stacks: []buildpack.Stack{
+								{ID: "some.stack.id",},
+							},
+						})
 
-			when.Pend("buildpack stack id does not match", func() {
-				it("returns an error", func() {
-					subject.AddBuildpack(buildpack.Buildpack{
-						ID:      "some-buildpack-id",
-						Version: "some-buildpack-version",
-						Path:    filepath.Join("testdata", "buildpack"),
-						Stacks:  []buildpack.Stack{{ID: "other.stack.id"}},
+						err := subject.Save()
+
+						h.AssertError(t, err, "buildpack 'some-buildpack-id@some-buildpack-version' cannot have both stacks and an order defined")
+					})
+				})
+
+				when("nested buildpack does not exist", func() {
+					when("buildpack by id does not exist", func() {
+						it("returns an error", func() {
+							subject.AddBuildpack(buildpack.Buildpack{
+								ID:      "some-buildpack-id",
+								Version: "some-buildpack-version",
+								Path:    filepath.Join("testdata", "buildpack"),
+								Order: buildpack.Order{
+									{
+										Group: []buildpack.BuildpackRef{
+											{ID: "missing-buildpack-id", Version: "missing-buildpack-version",},
+										},
+									},
+								},
+							})
+
+							err := subject.Save()
+
+							h.AssertError(t, err, "buildpack 'missing-buildpack-id@missing-buildpack-version' not found on the builder")
+						})
 					})
 
-					err := subject.Save()
+					when("buildpack version does not exist", func() {
+						it("returns an error", func() {
+							subject.AddBuildpack(buildpack.Buildpack{
+								ID:      "some-buildpack-id",
+								Version: "some-buildpack-version",
+								Path:    filepath.Join("testdata", "buildpack"),
+								Order: buildpack.Order{
+									{
+										Group: []buildpack.BuildpackRef{
+											{ID: "some-buildpack-id", Version: "missing-buildpack-version",},
+										},
+									},
+								},
+							})
 
-					h.AssertError(t, err, "buildpack 'some-buildpack-id' version 'some-buildpack-version' does not support stack 'some.stack.id'")
+							err := subject.Save()
+
+							h.AssertError(t, err, "buildpack 'some-buildpack-id@missing-buildpack-version' not found on the builder")
+						})
+					})
+				})
+
+				when("buildpack stack id does not match", func() {
+					it("returns an error", func() {
+						subject.AddBuildpack(buildpack.Buildpack{
+							ID:      "some-buildpack-id",
+							Version: "some-buildpack-version",
+							Path:    filepath.Join("testdata", "buildpack"),
+							Stacks:  []buildpack.Stack{{ID: "other.stack.id"}},
+						})
+
+						err := subject.Save()
+
+						h.AssertError(t, err, "buildpack 'some-buildpack-id@some-buildpack-version' does not support stack 'some.stack.id'")
+					})
 				})
 			})
+
 		})
 
 		when("#SetLifecycle", func() {

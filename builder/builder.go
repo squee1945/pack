@@ -157,9 +157,6 @@ func New(img imgutil.Image, name string) (*Builder, error) {
 }
 
 func (b *Builder) AddBuildpack(bp buildpack.Buildpack) {
-	//if !bp.SupportsStack(b.StackID) {
-	//	return fmt.Errorf("buildpack %s version %s does not support stack %s", style.Symbol(bp.ID), style.Symbol(bp.Version), style.Symbol(b.StackID))
-	//}
 	b.buildpacks = append(b.buildpacks, bp)
 	b.metadata.Buildpacks = append(b.metadata.Buildpacks, BuildpackMetadata{ID: bp.ID, Version: bp.Version})
 }
@@ -195,6 +192,10 @@ func (b *Builder) SetStackInfo(stackConfig StackConfig) {
 func (b *Builder) Save() error {
 	if err := processMetadata(&b.metadata); err != nil {
 		return errors.Wrap(err, "processing metadata")
+	}
+
+	if err := validateBuildpacks(b.StackID, b.buildpacks); err != nil {
+		return errors.Wrap(err, "validating buildpacks")
 	}
 
 	tmpDir, err := ioutil.TempDir("", "create-builder-scratch")
@@ -272,6 +273,41 @@ func (b *Builder) Save() error {
 
 	_, err = b.image.Save()
 	return err
+}
+
+func validateBuildpacks(stackID string, bps []buildpack.Buildpack) error {
+	bpLookup := map[string]interface{}{}
+
+	for _, bp := range bps {
+		bpLookup[bp.ID+"@"+bp.Version] = nil
+	}
+
+	for _, bp := range bps {
+		if len(bp.Order) == 0 && len(bp.Stacks) == 0 {
+			return fmt.Errorf("buildpack %s must have either stacks or an order defined", style.Symbol(bp.ID+"@"+bp.Version))
+		}
+
+		if len(bp.Order) >= 1 && len(bp.Stacks) >= 1 {
+			return fmt.Errorf("buildpack %s cannot have both stacks and an order defined", style.Symbol(bp.ID+"@"+bp.Version))
+		}
+
+		if len(bp.Stacks) >= 1 && !bp.SupportsStack(stackID) {
+			return fmt.Errorf(
+				"buildpack %s does not support stack %s",
+				style.Symbol(bp.ID+"@"+bp.Version), style.Symbol(stackID),
+			)
+		}
+
+		for _, g := range bp.Order {
+			for _, r := range g.Group {
+				if _, ok := bpLookup[r.ID+"@"+r.Version]; !ok {
+					return fmt.Errorf("buildpack %s not found on the builder", style.Symbol(r.ID+"@"+r.Version))
+				}
+			}
+		}
+	}
+
+	return nil
 }
 
 func userAndGroupIDs(img imgutil.Image) (int, int, error) {
