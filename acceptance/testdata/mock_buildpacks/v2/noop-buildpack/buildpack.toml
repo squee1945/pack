@@ -1,3 +1,6 @@
+# TODO use schema version?
+schema = "2"
+
 [buildpack]
   id = "noop.buildpack"
   version = "noop.buildpack.version"

@@ -1,7 +1,0 @@
-[[buildpacks]]
-  id = "single.buildpack"
-  version = "single.buildpack.v1"
-  name = "Single Buildpack"
-
-[[stacks]]
-  id = "io.buildpacks.stacks.bionic"

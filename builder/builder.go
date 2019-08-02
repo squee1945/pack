@@ -275,6 +275,7 @@ func (b *Builder) Save() error {
 	return err
 }
 
+// TODO: error out when using lifecycle <= 0.3.0 and schema > 1 is used
 func validateBuildpacks(stackID string, bps []buildpack.Buildpack) error {
 	bpLookup := map[string]interface{}{}
 

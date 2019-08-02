@@ -1,7 +1,0 @@
-[buildpack]
-  id = "dup.buildpack"
-  version = "dup.buildpack.v1"
-  name = "Dup Buildpack V1"
-
-[[stacks]]
-  id = "io.buildpacks.stacks.bionic"
