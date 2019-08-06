@@ -30,6 +30,7 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 
+	"github.com/buildpack/pack/acceptance"
 	"github.com/buildpack/pack/cache"
 	"github.com/buildpack/pack/internal/archive"
 	"github.com/buildpack/pack/lifecycle"
@@ -38,6 +39,7 @@ import (
 
 var (
 	packPath         string
+	previousPackPath string
 	dockerCli        *client.Client
 	registryConfig   *h.TestRegistryConfig
 	runImage         = "pack-test/run"
@@ -49,26 +51,27 @@ var (
 	lifecycleV030    = semver.MustParse("0.3.0")
 )
 
-func TestAcceptance(t *testing.T) {
+func TestCompat(t *testing.T) {
 	h.RequireDocker(t)
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	packPath = os.Getenv("PACK_PATH")
 	if packPath == "" {
-		// TODO: Use UTILS
-		packTmpDir, err := ioutil.TempDir("", "pack.acceptance.binary.")
-		if err != nil {
-			t.Fatal(err)
-		}
-		packPath = filepath.Join(packTmpDir, "pack")
-		if runtime.GOOS == "windows" {
-			packPath = packPath + ".exe"
-		}
-		if txt, err := exec.Command("go", "build", "-o", packPath, "../cmd/pack").CombinedOutput(); err != nil {
-			t.Fatal("building pack cli:\n", string(txt), err)
-		}
-		defer os.RemoveAll(packTmpDir)
+		packPath = acceptance.BuildPack(t, "../../../cmd/pack")
+		defer os.Remove(packPath)
 	}
+	if _, err := os.Stat(packPath); os.IsNotExist(err) {
+		t.Fatal("No file found at PACK_PATH environment variable:", packPath)
+	}
+
+	previousPackPath = os.Getenv("PREVIOUS_PACK_PATH")
+	if previousPackPath == "" {
+		t.Fatal("PREVIOUS_PACK_PATH is required")
+	}
+	if _, err := os.Stat(previousPackPath); os.IsNotExist(err) {
+		t.Fatal("No file found at PREVIOUS_PACK_PATH environment variable:", previousPackPath)
+	}
+
 	var err error
 	dockerCli, err = client.NewClientWithOpts(client.FromEnv, client.WithVersion("1.38"))
 	h.AssertNil(t, err)
@@ -79,10 +82,10 @@ func TestAcceptance(t *testing.T) {
 	builder = createBuilder(t, runImageMirror)
 	defer h.DockerRmi(dockerCli, runImage, buildImage, builder, runImageMirror)
 
-	spec.Run(t, "pack", testAcceptance, spec.Report(report.Terminal{}))
+	spec.Run(t, "compat", testCompat, spec.Report(report.Terminal{}))
 }
 
-func testAcceptance(t *testing.T, when spec.G, it spec.S) {
+func testCompat(t *testing.T, when spec.G, it spec.S) {
 	var (
 		packHome string
 	)
@@ -101,9 +104,6 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	it.Before(func() {
-		if _, err := os.Stat(packPath); os.IsNotExist(err) {
-			t.Fatal("No file found at PACK_PATH environment variable:", packPath)
-		}
 		var err error
 		packHome, err = ioutil.TempDir("", "buildpack.pack.home.")
 		h.AssertNil(t, err)
@@ -692,7 +692,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 
 			when("image metadata has a mirror", func() {
 				it.Before(func() {
-					//clean up existing mirror first to avoid leaking images
+					// clean up existing mirror first to avoid leaking images
 					h.AssertNil(t, h.DockerRmi(dockerCli, runImageMirror))
 
 					buildRunImage(runImageMirror, "mirror-after-1", "mirror-after-2")
@@ -793,9 +793,9 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 }
 
 func testBuildpacksDir() string {
-	d := "v1"
+	d := "api1"
 	if lifecycleVersion.GreaterThan(lifecycleV030) {
-		d = "v2"
+		d = "api2"
 	}
 	return filepath.Join("testdata", "mock_buildpacks", d)
 }
@@ -871,7 +871,7 @@ func createBuilder(t *testing.T, runImageMirror string) string {
 
 	// CREATE BUILDER
 	t.Logf("Creating builder. Lifecycle version '%s' will be used.", lifecycleVersion)
-	cmd := exec.Command(packPath, "create-builder", "--no-color", builder, "-b", filepath.Join(tmpDir, "builder.toml"))
+	cmd := exec.Command(previousPackPath, "create-builder", "--no-color", builder, "-b", filepath.Join(tmpDir, "builder.toml"))
 	output := h.Run(t, cmd)
 	h.AssertContains(t, output, fmt.Sprintf("Successfully created builder image '%s'", builder))
 	h.AssertNil(t, h.PushImage(dockerCli, builder, registryConfig))

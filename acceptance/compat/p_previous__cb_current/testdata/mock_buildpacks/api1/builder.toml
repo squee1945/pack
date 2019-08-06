@@ -1,3 +1,5 @@
+schema = "2"
+
 [[buildpacks]]
   id = "simple/layers"
   version = "simple-layers-version"
@@ -9,7 +11,8 @@
   uri = "read-env-buildpack.tgz"
 
 [[buildpacks]]
-  # intentionally missing id/version as they are optional
+  id = "noop.buildpack"
+  version = "noop.buildpack.version"
   uri = "noop-buildpack.tgz"
 
 [[order]]

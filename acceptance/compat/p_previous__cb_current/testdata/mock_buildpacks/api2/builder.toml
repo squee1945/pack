@@ -1,3 +1,5 @@
+schema = "2"
+
 [[buildpacks]]
   id = "simple/layers"
   version = "simple-layers-version"
@@ -9,14 +11,12 @@
   uri = "read-env-buildpack.tgz"
 
 [[buildpacks]]
-  id = "noop.buildpack"
-  version = "noop.buildpack.version"
+  # intentionally missing id/version as they are optional
   uri = "noop-buildpack.tgz"
 
 [[order]]
 [[order.group]]
-  id = "simple/layers"
-  # TODO: missing acceptable?
+  id = "simple/layers"  
   # intentionlly missing version to test support
 
 [[order.group]]

@@ -783,9 +783,9 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 }
 
 func testBuildpacksDir() string {
-	d := "v1"
+	d := "api1"
 	if lifecycleVersion.GreaterThan(lifecycleV030) {
-		d = "v2"
+		d = "api2"
 	}
 	return filepath.Join("testdata", "mock_buildpacks", d)
 }
