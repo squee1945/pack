@@ -3,7 +3,8 @@
 out/
 
 # Jetbrains Goland
-.idea/
+.idea/*
+!.idea/runConfigurations/
 
 # Build outputs
 artifacts/
