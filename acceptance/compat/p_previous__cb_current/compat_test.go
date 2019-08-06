@@ -1,6 +1,6 @@
 // +build acceptance
 
-package acceptance
+package p_previous__cb_current
 
 import (
 	"bytes"
@@ -30,6 +30,7 @@ import (
 	"github.com/sclevine/spec"
 	"github.com/sclevine/spec/report"
 
+	"github.com/buildpack/pack/acceptance"
 	"github.com/buildpack/pack/cache"
 	"github.com/buildpack/pack/internal/archive"
 	"github.com/buildpack/pack/lifecycle"
@@ -38,6 +39,7 @@ import (
 
 var (
 	packPath         string
+	previousPackPath string
 	dockerCli        *client.Client
 	registryConfig   *h.TestRegistryConfig
 	runImage         = "pack-test/run"
@@ -49,17 +51,25 @@ var (
 	lifecycleV030    = semver.MustParse("0.3.0")
 )
 
-func TestAcceptance(t *testing.T) {
+func TestCompat(t *testing.T) {
 	h.RequireDocker(t)
 	rand.Seed(time.Now().UTC().UnixNano())
 
 	packPath = os.Getenv("PACK_PATH")
 	if packPath == "" {
-		packPath = BuildPack(t, "../../../cmd/pack")
+		packPath = acceptance.BuildPack(t, "../../../cmd/pack")
 		defer os.Remove(packPath)
 	}
 	if _, err := os.Stat(packPath); os.IsNotExist(err) {
 		t.Fatal("No file found at PACK_PATH environment variable:", packPath)
+	}
+
+	previousPackPath = os.Getenv("PREVIOUS_PACK_PATH")
+	if previousPackPath == "" {
+		t.Fatal("PREVIOUS_PACK_PATH is required")
+	}
+	if _, err := os.Stat(previousPackPath); os.IsNotExist(err) {
+		t.Fatal("No file found at PREVIOUS_PACK_PATH environment variable:", previousPackPath)
 	}
 
 	var err error
@@ -72,10 +82,10 @@ func TestAcceptance(t *testing.T) {
 	builder = createBuilder(t, runImageMirror)
 	defer h.DockerRmi(dockerCli, runImage, buildImage, builder, runImageMirror)
 
-	spec.Run(t, "pack", testAcceptance, spec.Report(report.Terminal{}))
+	spec.Run(t, "compat", testCompat, spec.Report(report.Terminal{}))
 }
 
-func testAcceptance(t *testing.T, when spec.G, it spec.S) {
+func testCompat(t *testing.T, when spec.G, it spec.S) {
 	var (
 		packHome string
 	)
@@ -86,7 +96,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 			"--no-color",
 		}, args...)
 		cmd := exec.Command(
-			packPath,
+			previousPackPath,
 			cmdArgs...,
 		)
 		cmd.Env = append(os.Environ(), "PACK_HOME="+packHome, "DOCKER_CONFIG="+registryConfig.DockerConfigDir)
@@ -330,7 +340,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 						)
 						txt, err := h.RunE(cmd)
 						h.AssertNotNil(t, err)
-						h.AssertContains(t, txt, "buildpack 'other/stack/bp@other-stack-version' does not support stack 'pack.test.stack'")
+						h.AssertContains(t, txt, "buildpack 'other/stack/bp' version 'other-stack-version' does not support stack 'pack.test.stack'")
 					})
 				})
 			})

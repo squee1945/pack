@@ -496,7 +496,31 @@ func (b *Builder) buildpackLayer(dest string, bp buildpack.Buildpack) (string, e
 		return "", errors.Wrapf(err, "creating layer tar for buildpack '%s:%s'", bp.ID, bp.Version)
 	}
 
+	if err := symlinkLatest(tw, baseTarDir, bp, b.metadata); err != nil {
+		return "", err
+	}
+
 	return layerTar, nil
+}
+
+// Deprecated: The 'latest' symlink is in place for backwards compatibility only. This should be removed as soon
+// as we no longer support older releases that rely on it.
+func symlinkLatest(tw *tar.Writer, baseTarDir string, bp buildpack.Buildpack, metadata Metadata) error {
+	for _, b := range metadata.Buildpacks {
+		if b.ID == bp.ID && b.Version == bp.Version && b.Latest {
+			err := tw.WriteHeader(&tar.Header{
+				Name:     fmt.Sprintf("%s/%s/%s", buildpacksDir, bp.EscapedID(), "latest"),
+				Linkname: baseTarDir,
+				Typeflag: tar.TypeSymlink,
+				Mode:     0644,
+			})
+			if err != nil {
+				return errors.Wrapf(err, "creating latest symlink for buildpack '%s:%s'", bp.ID, bp.Version)
+			}
+			break
+		}
+	}
+	return nil
 }
 
 func (b *Builder) embedBuildpackTar(tw *tar.Writer, srcTar, baseTarDir string) error {

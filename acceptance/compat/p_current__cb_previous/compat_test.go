@@ -1,6 +1,6 @@
 // +build acceptance
 
-package acceptance
+package p_current__cb_previous
 
 import (
 	"bytes"
@@ -55,13 +55,20 @@ func TestAcceptance(t *testing.T) {
 
 	packPath = os.Getenv("PACK_PATH")
 	if packPath == "" {
-		packPath = BuildPack(t, "../../../cmd/pack")
-		defer os.Remove(packPath)
+		// TODO: Use UTILS
+		packTmpDir, err := ioutil.TempDir("", "pack.acceptance.binary.")
+		if err != nil {
+			t.Fatal(err)
+		}
+		packPath = filepath.Join(packTmpDir, "pack")
+		if runtime.GOOS == "windows" {
+			packPath = packPath + ".exe"
+		}
+		if txt, err := exec.Command("go", "build", "-o", packPath, "../cmd/pack").CombinedOutput(); err != nil {
+			t.Fatal("building pack cli:\n", string(txt), err)
+		}
+		defer os.RemoveAll(packTmpDir)
 	}
-	if _, err := os.Stat(packPath); os.IsNotExist(err) {
-		t.Fatal("No file found at PACK_PATH environment variable:", packPath)
-	}
-
 	var err error
 	dockerCli, err = client.NewClientWithOpts(client.FromEnv, client.WithVersion("1.38"))
 	h.AssertNil(t, err)
@@ -94,6 +101,9 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 	}
 
 	it.Before(func() {
+		if _, err := os.Stat(packPath); os.IsNotExist(err) {
+			t.Fatal("No file found at PACK_PATH environment variable:", packPath)
+		}
 		var err error
 		packHome, err = ioutil.TempDir("", "buildpack.pack.home.")
 		h.AssertNil(t, err)
@@ -682,7 +692,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 
 			when("image metadata has a mirror", func() {
 				it.Before(func() {
-					// clean up existing mirror first to avoid leaking images
+					//clean up existing mirror first to avoid leaking images
 					h.AssertNil(t, h.DockerRmi(dockerCli, runImageMirror))
 
 					buildRunImage(runImageMirror, "mirror-after-1", "mirror-after-2")
