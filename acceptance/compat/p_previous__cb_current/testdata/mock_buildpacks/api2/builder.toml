@@ -1,5 +1,3 @@
-schema = "2"
-
 [[buildpacks]]
   id = "simple/layers"
   version = "simple-layers-version"
@@ -16,7 +14,7 @@ schema = "2"
 
 [[order]]
 [[order.group]]
-  id = "simple/layers"  
+  id = "simple/layers"
   # intentionlly missing version to test support
 
 [[order.group]]

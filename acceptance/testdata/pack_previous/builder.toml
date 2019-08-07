@@ -1,3 +1,5 @@
+schema = "1"
+
 [[buildpacks]]
   id = "simple/layers"
   version = "simple-layers-version"
@@ -12,13 +14,14 @@
   id = "noop.buildpack"
   version = "noop.buildpack.version"
   uri = "noop-buildpack.tgz"
+  latest = true
 
-[[order]]
-[[order.group]]
+[[groups]]
+[[groups.buildpacks]]
   id = "simple/layers"
-  # intentionlly missing version to test support
+  version = "simple-layers-version"
 
-[[order.group]]
+[[groups.buildpacks]]
   id = "read/env"
   version = "read-env-version"
   optional = true

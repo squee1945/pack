@@ -6,7 +6,19 @@ import (
 	"bytes"
 	"context"
 	"crypto/sha256"
+	"encoding/json"
 	"fmt"
+	"github.com/Masterminds/semver"
+	"github.com/buildpack/lifecycle/metadata"
+	"github.com/buildpack/pack/cache"
+	"github.com/buildpack/pack/internal/archive"
+	"github.com/buildpack/pack/lifecycle"
+	"github.com/docker/docker/api/types/container"
+	"github.com/docker/docker/client"
+	"github.com/docker/go-connections/nat"
+	"github.com/google/go-containerregistry/pkg/name"
+	"github.com/sclevine/spec"
+	"github.com/sclevine/spec/report"
 	"io"
 	"io/ioutil"
 	"math/rand"
@@ -14,72 +26,134 @@ import (
 	"os/exec"
 	"path/filepath"
 	"regexp"
-	"runtime"
 	"strings"
 	"testing"
 	"time"
 
-	"github.com/Masterminds/semver"
-	"github.com/buildpack/lifecycle/metadata"
-	dockertypes "github.com/docker/docker/api/types"
-	"github.com/docker/docker/api/types/container"
-	"github.com/docker/docker/client"
-	"github.com/docker/go-connections/nat"
-	"github.com/google/go-containerregistry/pkg/name"
 	"github.com/pkg/errors"
-	"github.com/sclevine/spec"
-	"github.com/sclevine/spec/report"
 
-	"github.com/buildpack/pack/cache"
-	"github.com/buildpack/pack/internal/archive"
-	"github.com/buildpack/pack/lifecycle"
 	h "github.com/buildpack/pack/testhelpers"
+
+	dockertypes "github.com/docker/docker/api/types"
+	"runtime"
+)
+
+const (
+	envPackPath              = "PACK_PATH"
+	envPreviousPackPath      = "PREVIOUS_PACK_PATH"
+	envLifecyclePath         = "LIFECYCLE_PATH"
+	envPreviousLifecyclePath = "PREVIOUS_LIFECYCLE_PATH"
+	envAcceptanceSuiteConfig = "ACCEPTANCE_SUITE_CONFIG"
+
+	runImage   = "pack-test/run"
+	buildImage = "pack-test/build"
 )
 
 var (
-	packPath         string
-	dockerCli        *client.Client
-	registryConfig   *h.TestRegistryConfig
-	runImage         = "pack-test/run"
-	buildImage       = "pack-test/build"
-	runImageMirror   string
-	builder          string
-	lifecycleVersion = semver.MustParse(lifecycle.DefaultLifecycleVersion)
-	lifecycleV020    = semver.MustParse("0.2.0")
-	lifecycleV030    = semver.MustParse("0.3.0")
+	packHome       string
+	dockerCli      *client.Client
+	registryConfig *h.TestRegistryConfig
+
+	lifecycleV020 = semver.MustParse("0.2.0")
+	lifecycleV030 = semver.MustParse("0.3.0")
 )
 
+type runCombo struct {
+	Pack              string
+	PackCreateBuilder string
+	Lifecycle         string
+}
+
 func TestAcceptance(t *testing.T) {
+	var err error
+
 	h.RequireDocker(t)
 	rand.Seed(time.Now().UTC().UnixNano())
 
-	packPath = os.Getenv("PACK_PATH")
-	if packPath == "" {
-		packPath = BuildPack(t, "../../../cmd/pack")
-		defer os.Remove(packPath)
-	}
-	if _, err := os.Stat(packPath); os.IsNotExist(err) {
-		t.Fatal("No file found at PACK_PATH environment variable:", packPath)
-	}
-
-	var err error
 	dockerCli, err = client.NewClientWithOpts(client.FromEnv, client.WithVersion("1.38"))
 	h.AssertNil(t, err)
+
 	registryConfig = h.RunRegistry(t, false)
 	defer registryConfig.StopRegistry(t)
-	runImageMirror = registryConfig.RepoName(runImage)
-	createStack(t, dockerCli)
-	builder = createBuilder(t, runImageMirror)
-	defer h.DockerRmi(dockerCli, runImage, buildImage, builder, runImageMirror)
 
-	spec.Run(t, "pack", testAcceptance, spec.Report(report.Terminal{}))
+	runImageMirror := registryConfig.RepoName(runImage)
+	createStack(t, dockerCli, runImageMirror)
+	defer h.DockerRmi(dockerCli, runImage, buildImage, runImageMirror)
+
+	suite := spec.New("acceptance suite", spec.Report(report.Terminal{}))
+
+	packPath := os.Getenv(envPackPath)
+	if packPath == "" {
+		packPath = BuildPack(t, "../cmd/pack")
+	}
+
+	previousPackPath := os.Getenv(envPreviousPackPath)
+	if previousPackPath == "" {
+		previousPackPath = packPath
+	}
+
+	lifecycleVersion := lifecycle.DefaultLifecycleVersion
+	lifecyclePath := os.Getenv(envLifecyclePath)
+	if lifecyclePath != "" {
+		lifecycleVersion, err = extractLifecycleVersion(lifecyclePath)
+		if err != nil {
+			t.Fatal("failed to extract lifecycle version from ", lifecyclePath)
+		}
+	}
+
+	previousLifecycleVersion := lifecycleVersion
+	previousLifecyclePath := os.Getenv(envPreviousLifecyclePath)
+	if previousLifecyclePath == "" {
+		previousLifecyclePath = lifecyclePath
+	} else {
+		previousLifecycleVersion, err = extractLifecycleVersion(previousLifecyclePath)
+		if err != nil {
+			t.Fatal("failed to extract previous lifecycle version from ", previousLifecyclePath)
+		}
+	}
+
+	suiteConfig := os.Getenv(envAcceptanceSuiteConfig)
+	cfgs := []runCombo{
+		{Pack: "current", PackCreateBuilder: "current", Lifecycle: "current"},
+	}
+
+	if suiteConfig != "" {
+		cfgs, err = parseConfig(suiteConfig)
+		h.AssertNil(t, err)
+	}
+
+	for _, c := range cfgs {
+		pPath := packPath
+		pCbPath := packPath
+		lcPath := lifecyclePath
+		lcVersion := lifecycleVersion
+
+		if c.Pack == "previous" {
+			pPath = previousPackPath
+		}
+		if c.PackCreateBuilder == "previous" {
+			pCbPath = previousPackPath
+		}
+		if c.Lifecycle == "previous" {
+			lcPath = previousLifecyclePath
+			lcVersion = previousLifecycleVersion
+		}
+
+		suite(fmt.Sprintf("p_%s cb_%s lc_%s@%s", c.Pack, c.PackCreateBuilder, c.Lifecycle, lcVersion), func(t *testing.T, when spec.G, it spec.S) {
+			// TODO: Clean up builder
+			var builder string
+			if t != nil {
+				builder = createBuilder(t, runImageMirror, pCbPath, lcPath, semver.MustParse(lcVersion))
+			}
+
+			testAcceptance(t, when, it, builder, runImageMirror, pPath, semver.MustParse(lcVersion))
+		})
+	}
+
+	suite.Run(t)
 }
 
-func testAcceptance(t *testing.T, when spec.G, it spec.S) {
-	var (
-		packHome string
-	)
-
+func testAcceptance(t *testing.T, when spec.G, it spec.S, builder, runImageMirror, packPath string, lifecycleVersion *semver.Version) {
 	var packCmd = func(name string, args ...string) *exec.Cmd {
 		cmdArgs := append([]string{
 			name,
@@ -148,7 +222,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 				)
 				output := h.Run(t, cmd)
 				h.AssertContains(t, output, fmt.Sprintf("Successfully built image '%s'", repoName))
-				imgId, err := imgIdFromOutput(output, repoName)
+				imgId, err := imgIdFromOutput(output, repoName, lifecycleVersion)
 				if err != nil {
 					t.Log(output)
 					t.Fatal("Could not determine image id for built image")
@@ -194,7 +268,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 				cmd = packCmd("build", repoName, "-p", appPath)
 				output = h.Run(t, cmd)
 				h.AssertContains(t, output, fmt.Sprintf("Successfully built image '%s'", repoName))
-				imgId, err = imgIdFromOutput(output, repoName)
+				imgId, err = imgIdFromOutput(output, repoName, lifecycleVersion)
 				if err != nil {
 					t.Log(output)
 					t.Fatal("Could not determine image id for built image")
@@ -243,7 +317,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 				)
 				output := h.Run(t, cmd)
 				h.AssertContains(t, output, fmt.Sprintf("Successfully built image '%s'", repoName))
-				imgId, err := imgIdFromOutput(output, repoName)
+				imgId, err := imgIdFromOutput(output, repoName, lifecycleVersion)
 				if err != nil {
 					t.Log(output)
 					t.Fatal("Could not determine image id for built image")
@@ -256,7 +330,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 					var notBuilderTgz string
 
 					it.Before(func() {
-						notBuilderTgz = h.CreateTgz(t, filepath.Join(testBuildpacksDir(), "not-in-builder-buildpack"), "./", 0766)
+						notBuilderTgz = h.CreateTgz(t, filepath.Join(buildpacksDir(lifecycleVersion), "not-in-builder-buildpack"), "./", 0766)
 					})
 
 					it.After(func() {
@@ -302,7 +376,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 						cmd := packCmd(
 							"build", repoName,
 							"-p", filepath.Join("testdata", "mock_app"),
-							"--buildpack", filepath.Join(testBuildpacksDir(), "not-in-builder-buildpack"),
+							"--buildpack", filepath.Join(buildpacksDir(lifecycleVersion), "not-in-builder-buildpack"),
 						)
 						output := h.Run(t, cmd)
 						h.AssertContains(t, output, fmt.Sprintf("Successfully built image '%s'", repoName))
@@ -315,7 +389,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 					var otherStackBuilderTgz string
 
 					it.Before(func() {
-						otherStackBuilderTgz = h.CreateTgz(t, filepath.Join(testBuildpacksDir(), "other-stack-buildpack"), "./", 0766)
+						otherStackBuilderTgz = h.CreateTgz(t, filepath.Join(buildpacksDir(lifecycleVersion), "other-stack-buildpack"), "./", 0766)
 					})
 
 					it.After(func() {
@@ -477,7 +551,7 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 					}
 					output := runPackBuild()
 					h.AssertContains(t, output, fmt.Sprintf("Successfully built image '%s'", repoName))
-					imgDigest, err := imgDigestFromOutput(output, repoName)
+					imgDigest, err := imgDigestFromOutput(output, repoName, lifecycleVersion)
 					if err != nil {
 						t.Log(output)
 						t.Fatal("Could not determine sha for built image")
@@ -782,15 +856,28 @@ func testAcceptance(t *testing.T, when spec.G, it spec.S) {
 	})
 }
 
-func testBuildpacksDir() string {
+func parseConfig(config string) ([]runCombo, error) {
+	var cfgs []runCombo
+	if err := json.Unmarshal([]byte(config), cfgs); err != nil {
+		return nil, errors.New("unable to parse config")
+	}
+	return cfgs, nil
+}
+
+// TODO: Implement
+func extractLifecycleVersion(lcPath string) (string, error) {
+	return "0.3.0", nil
+}
+
+func buildpacksDir(lcVersion *semver.Version) string {
 	d := "api1"
-	if lifecycleVersion.GreaterThan(lifecycleV030) {
+	if lcVersion.GreaterThan(lifecycleV030) {
 		d = "api2"
 	}
 	return filepath.Join("testdata", "mock_buildpacks", d)
 }
 
-func createBuilder(t *testing.T, runImageMirror string) string {
+func createBuilder(t *testing.T, runImageMirror string, packPath, lifecyclePath string, lifecycleVersion *semver.Version) string {
 	t.Log("Creating builder image...")
 
 	// CREATE TEMP WORKING DIR
@@ -798,26 +885,13 @@ func createBuilder(t *testing.T, runImageMirror string) string {
 	h.AssertNil(t, err)
 	defer os.RemoveAll(tmpDir)
 
-	// DETERMINE LIFECYCLE
-	lifecyclePath, hasLifecyclePath := os.LookupEnv("LIFECYCLE_PATH")
-	if hasLifecyclePath {
-		lifecycleVersion = semver.MustParse("0.0.0")
-
-		if !filepath.IsAbs(lifecyclePath) {
-			lifecyclePath, err = filepath.Abs(lifecyclePath)
-			h.AssertNil(t, err)
-		}
-	}
-
-	if v, ok := os.LookupEnv("LIFECYCLE_VERSION"); ok {
-		lifecycleVersion = semver.MustParse(v)
-	}
-
 	// DETERMINE TEST DATA
-	t.Log("Using buildpacks from: ", testBuildpacksDir())
-	h.RecursiveCopy(t, testBuildpacksDir(), tmpDir)
+	buildpacksDir := buildpacksDir(lifecycleVersion)
+	t.Log("Using buildpacks from: ", buildpacksDir)
+	h.RecursiveCopy(t, buildpacksDir, tmpDir)
 
 	// COPY builder.toml
+	h.CopyFile(t, filepath.Join("testdata", "builder.toml"), filepath.Join(tmpDir, "builder.toml"))
 	builderConfigFile, err := os.OpenFile(filepath.Join(tmpDir, "builder.toml"), os.O_RDWR|os.O_APPEND, 0666)
 	h.AssertNil(t, err)
 
@@ -829,7 +903,7 @@ func createBuilder(t *testing.T, runImageMirror string) string {
 	_, err = builderConfigFile.Write([]byte("[lifecycle]\n"))
 	h.AssertNil(t, err)
 
-	if hasLifecyclePath {
+	if lifecyclePath != "" {
 		t.Logf("Adding lifecycle path '%s' to builder config", lifecyclePath)
 		_, err = builderConfigFile.Write([]byte(fmt.Sprintf("uri = \"%s\"\n", strings.ReplaceAll(lifecyclePath, `\`, `\\`))))
 		h.AssertNil(t, err)
@@ -851,7 +925,7 @@ func createBuilder(t *testing.T, runImageMirror string) string {
 	}
 
 	for _, v := range buildpacks {
-		tgz := h.CreateTgz(t, filepath.Join(testBuildpacksDir(), v), "./", 0766)
+		tgz := h.CreateTgz(t, filepath.Join(buildpacksDir, v), "./", 0766)
 		err := os.Rename(tgz, filepath.Join(tmpDir, v+".tgz"))
 		h.AssertNil(t, err)
 	}
@@ -869,7 +943,7 @@ func createBuilder(t *testing.T, runImageMirror string) string {
 	return builder
 }
 
-func createStack(t *testing.T, dockerCli *client.Client) {
+func createStack(t *testing.T, dockerCli *client.Client, runImageMirror string) {
 	t.Log("Creating stack images...")
 	createStackImage(t, dockerCli, runImage, filepath.Join("testdata", "mock_stack"))
 	h.AssertNil(t, dockerCli.ImageTag(context.Background(), runImage, buildImage))
@@ -935,7 +1009,7 @@ func fetchHostPort(t *testing.T, dockerID string) string {
 	return ""
 }
 
-func imgDigestFromOutput(txt, repoName string) (string, error) {
+func imgDigestFromOutput(txt, repoName string, lifecycleVersion *semver.Version) (string, error) {
 	if lifecycleVersion.LessThan(lifecycleV030) {
 		for _, m := range regexp.MustCompile(`\*\*\* Image: (.+)@(.+)`).FindAllStringSubmatch(txt, -1) {
 			if m[1] == repoName || m[1] == repoName+":latest" {
@@ -951,9 +1025,9 @@ func imgDigestFromOutput(txt, repoName string) (string, error) {
 	return "", errors.New("could not find digest in output")
 }
 
-func imgIdFromOutput(txt, repoName string) (string, error) {
+func imgIdFromOutput(txt, repoName string, lifecycleVersion *semver.Version) (string, error) {
 	if lifecycleVersion.LessThan(lifecycleV030) {
-		return imgDigestFromOutput(txt, repoName)
+		return imgDigestFromOutput(txt, repoName, lifecycleVersion)
 	}
 
 	for _, m := range regexp.MustCompile(`\*\*\* Image ID: (.+)`).FindAllStringSubmatch(txt, -1) {

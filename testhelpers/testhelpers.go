@@ -327,28 +327,33 @@ func PullImageWithAuth(dockerCli *client.Client, ref, registryAuth string) error
 	return rc.Close()
 }
 
+func CopyFile(t *testing.T, src, dst string) {
+	fi, err := os.Stat(src)
+	AssertNil(t, err)
+
+	srcFile, err := os.Open(src)
+	AssertNil(t, err)
+	defer srcFile.Close()
+
+	dstFile, err := os.OpenFile(dst, os.O_RDWR|os.O_CREATE|os.O_TRUNC, fi.Mode())
+	AssertNil(t, err)
+	defer dstFile.Close()
+
+	_, err = io.Copy(dstFile, srcFile)
+	AssertNil(t, err)
+
+	modifiedtime := time.Time{}
+	err = os.Chtimes(dst, modifiedtime, modifiedtime)
+	AssertNil(t, err)
+}
+
 func RecursiveCopy(t *testing.T, src, dst string) {
 	t.Helper()
 	fis, err := ioutil.ReadDir(src)
 	AssertNil(t, err)
 	for _, fi := range fis {
 		if fi.Mode().IsRegular() {
-			func() {
-				srcFile, err := os.Open(filepath.Join(src, fi.Name()))
-				AssertNil(t, err)
-				defer srcFile.Close()
-
-				dstFile, err := os.OpenFile(filepath.Join(dst, fi.Name()), os.O_RDWR|os.O_CREATE|os.O_TRUNC, fi.Mode())
-				AssertNil(t, err)
-				defer dstFile.Close()
-
-				_, err = io.Copy(dstFile, srcFile)
-				AssertNil(t, err)
-
-				modifiedtime := time.Time{}
-				err = os.Chtimes(filepath.Join(dst, fi.Name()), modifiedtime, modifiedtime)
-				AssertNil(t, err)
-			}()
+			CopyFile(t, filepath.Join(src, fi.Name()), filepath.Join(dst, fi.Name()))
 		}
 		if fi.IsDir() {
 			err = os.Mkdir(filepath.Join(dst, fi.Name()), fi.Mode())
