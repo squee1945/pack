@@ -6,7 +6,7 @@ require (
 	github.com/apex/log v1.9.0
 	github.com/buildpacks/imgutil v0.0.0-20210510154637-009f91f52918
 	github.com/buildpacks/lifecycle v0.11.4
-	github.com/docker/docker v20.10.8+incompatible
+	github.com/docker/docker v20.10.17+incompatible
 	github.com/docker/go-connections v0.4.0
 	github.com/gdamore/tcell/v2 v2.3.3
 	github.com/ghodss/yaml v1.0.0
